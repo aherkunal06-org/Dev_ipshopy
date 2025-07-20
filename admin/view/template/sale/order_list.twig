@@ -40,6 +40,12 @@
             <label class="control-label" for="input-customer">{{ entry_customer }}</label>
             <input type="text" name="filter_customer" value="{{ filter_customer }}" placeholder="{{ entry_customer }}" id="input-customer" class="form-control" />
           </div>
+          
+          <div class="form-group">
+				<label class="control-label" for="input-filter_name">{{ entry_selername }} </label>
+				<input type="text" name="filter_name" value="{{ filter_name }}" placeholder="{{ entry_selername }}" id="input-filter_name" class="form-control" />
+		   </div>
+          
           <div class="form-group">
             <label class="control-label" for="input-order-status">{{ entry_order_status }}</label>
             <select name="filter_order_status_id" id="input-order-status" class="form-control">
@@ -108,10 +114,17 @@
                     <td style="width: 1px;" class="text-center"><input type="checkbox" onclick="$('input[name*=\'selected\']').prop('checked', this.checked);" /></td>
                     <td class="text-right">{% if sort == 'o.order_id' %} <a href="{{ sort_order }}" class="{{ order|lower }}">{{ column_order_id }}</a> {% else %} <a href="{{ sort_order }}">{{ column_order_id }}</a> {% endif %}</td>
                     <td class="text-left">{% if sort == 'customer' %} <a href="{{ sort_customer }}" class="{{ order|lower }}">{{ column_customer }}</a> {% else %} <a href="{{ sort_customer }}">{{ column_customer }}</a> {% endif %}</td>
+                    <td class="text-left">{{seller_name}}</td>
                     <td class="text-left">{% if sort == 'order_status' %} <a href="{{ sort_status }}" class="{{ order|lower }}">{{ column_status }}</a> {% else %} <a href="{{ sort_status }}">{{ column_status }}</a> {% endif %}</td>
                     <td class="text-right">{% if sort == 'o.total' %} <a href="{{ sort_total }}" class="{{ order|lower }}">{{ column_total }}</a> {% else %} <a href="{{ sort_total }}">{{ column_total }}</a> {% endif %}</td>
                     <td class="text-left">{% if sort == 'o.date_added' %} <a href="{{ sort_date_added }}" class="{{ order|lower }}">{{ column_date_added }}</a> {% else %} <a href="{{ sort_date_added }}">{{ column_date_added }}</a> {% endif %}</td>
                     <td class="text-left">{% if sort == 'o.date_modified' %} <a href="{{ sort_date_modified }}" class="{{ order|lower }}">{{ column_date_modified }}</a> {% else %} <a href="{{ sort_date_modified }}">{{ column_date_modified }}</a> {% endif %}</td>
+                    {# added changes for show the estimated charges and track button ----on 03-06-2026 --#}
+                    <td class="text-left">{{column_estimated_courier_charges}}</td>
+                    <td class="text-left">{{column_estimated_netsettlement}}</td>
+                    <td class="text-left">{{column_label}}</td>
+                    <td class="text-left">{{column_track_order}}</td>
+                    {#-------------------------------------------------------------------------------------------#}
                     <td class="text-right">{{ column_action }}</td>
                   </tr>
                 </thead>
@@ -128,10 +141,40 @@
                     <input type="hidden" name="shipping_code[]" value="{{ order.shipping_code }}" /></td>
                   <td class="text-right">{{ order.order_id }}</td>
                   <td class="text-left">{{ order.customer }}</td>
+                  <td>{{ order.seller_name ? order.seller_name|join(', ') : 'N/A' }}</td>
                   <td class="text-left">{{ order.order_status }}</td>
                   <td class="text-right">{{ order.total }}</td>
                   <td class="text-left">{{ order.date_added }}</td>
                   <td class="text-left">{{ order.date_modified }}</td>
+                  {# added changes for show the estimated charges and track button ----on 03-06-2026 --#}
+                  <td class="text-left">{% if order.estimated_courier_charges > 0 %}
+                                            ₹{{ order.estimated_courier_charges }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}</td>
+                  <td class="text-left">{% if order.estimated_net_settlement > 0 %}
+                                                    ₹{{order.estimated_net_settlement}}
+                                          {% else %}
+                                                    N/A
+                                          {% endif %}</td>
+                  <td class="text-left">
+                      {% if order.shipping_label is not empty %}
+                    <a href="{{order.shipping_label}}" target="_blank">
+                         <svg width="30" height="35" class="bi bi-upc-scan" viewBox ="0 0 16 16">
+                        	<path d="M1.5 1a.5.5 0 0 0-.5.5v3a.5.5 0 0 1-1 0v-3A1.5 1.5 0 0 1 1.5 0h3a.5.5 0 0 1 0 1h-3zM11 .5a.5.5 0 0 1 .5-.5h3A1.5 1.5 0 0 1 16 1.5v3a.5.5 0 0 1-1 0v-3a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 1-.5-.5zM.5 11a.5.5 0 0 1 .5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 1 0 1h-3A1.5 1.5 0 0 1 0 14.5v-3a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v3a1.5 1.5 0 0 1-1.5 1.5h-3a.5.5 0 0 1 0-1h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 1 .5-.5zM3 4.5a.5.5 0 0 1 1 0v7a.5.5 0 0 1-1 0v-7zm2 0a.5.5 0 0 1 1 0v7a.5.5 0 0 1-1 0v-7zm2 0a.5.5 0 0 1 1 0v7a.5.5 0 0 1-1 0v-7zm2 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-7zm3 0a.5.5 0 0 1 1 0v7a.5.5 0 0 1-1 0v-7z"></path>
+                         </svg>
+                    </a>
+                    {% endif %}
+                 </td>
+                  <td class="text-left">
+                     {% if order.awbno is not empty %}  
+                     {#  commented this on 30/06/2025 and added new  https://ipshopy.clickpost.in/en?order_id=   #}
+                        <a href="https://ipshopy.clickpost.ai/en/my-order?order_id={{ order.order_id}}" target="_blank" >
+                            <img src='https://img.icons8.com/?size=100&id=sWKk2QISB1bz&format=png&color=000000' alt='Track' style='cursor:pointer;width:30px;heigth:30px;margin: 0 0 0 6px;'/>
+                        </a>
+                    {% endif %}
+                  </td>
+                  {#-------------------------------------------------------------------------------------#}
                   <td class="text-right"><div style="min-width: 120px;">
                       <div class="btn-group"> <a href="{{ order.view }}" data-toggle="tooltip" title="{{ button_view }}" class="btn btn-primary"><i class="fa fa-eye"></i></a>
                         <button type="button" data-toggle="dropdown" class="btn btn-primary dropdown-toggle"><span class="caret"></span></button>
@@ -172,6 +215,12 @@ $('#button-filter').on('click', function() {
 	}
 
 	var filter_customer = $('input[name=\'filter_customer\']').val();
+	
+	var filter_name = $('input[name=\'filter_name\']').val();
+
+	if (filter_name) {
+		url += '&filter_name=' + encodeURIComponent(filter_name);
+	}
 
 	if (filter_customer) {
 		url += '&filter_customer=' + encodeURIComponent(filter_customer);
@@ -224,6 +273,34 @@ $('input[name=\'filter_customer\']').autocomplete({
 		$('input[name=\'filter_customer\']').val(item['label']);
 	}
 });
+
+$('input[name=\'filter_name\']').autocomplete({
+	'source': function(request, response) {
+		$.ajax({
+			url: 'index.php?route=vendor/vendor/autocomplete&user_token={{ user_token }}&filter_name=' +  encodeURIComponent(request),
+			dataType: 'json',
+			success: function(json) {
+				json.unshift({
+					vendor_id: 0,
+					vendorname: '{{ text_none }}'
+				});
+
+				response($.map(json, function(item) {
+					return {
+						label: item['vendorname'],
+						value: item['vendor_id']
+					}
+				}));
+			}
+		});
+	},
+	'select': function(item) {
+		$('input[name=\'filter_name\']').val(item['label']);
+		$('input[name=\'rf_id\']').val(item['value']);
+	}
+});
+
+
 //--></script> 
   <script type="text/javascript"><!--
 $('input[name^=\'selected\']').on('change', function() {

@@ -1,26 +1,32 @@
 {{ header }}
+<style>
+    .account_container{
+        display:flex;
+        gap:40px;
+    }
+    .account_right{
+        width:100%;
+    }
+</style>
 <div id="account-address" class="container">
   <ul class="breadcrumb">
     {% for breadcrumb in breadcrumbs %}
     <li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
     {% endfor %}
   </ul>
-  <div class="row">{{ column_left }}
-    {% if column_left and column_right %}
-    {% set class = 'col-sm-6' %}
-    {% elseif column_left or column_right %}
-    {% set class = 'col-sm-9' %}
-    {% else %}
-    {% set class = 'col-sm-12' %}
-    {% endif %}
-    <div id="content" class="{{ class }}">{{ content_top }}
+  <div class='account_wrapper'>
+	<div class="" id="account-info-container">
+	
+	    {{ column_left_account }}
+		<div id="content" class="{{ class }} right_section">{{ content_top }}
       <h2>{{ text_address }}</h2>
       <form action="{{ action }}" method="post" enctype="multipart/form-data" class="form-horizontal">
         <fieldset>
           <div class="form-group required">
             <label class="col-sm-2 control-label" for="input-firstname">{{ entry_firstname }}</label>
             <div class="col-sm-10">
-              <input type="text" name="firstname" value="{{ firstname }}" placeholder="{{ entry_firstname }}" id="input-firstname" class="form-control" />
+              <input type="text" name="firstname" value="{{ firstname }}" placeholder="{{ entry_firstname }}" id="input-firstname" class="form-control" pattern="^[A-Za-z]+( [A-Za-z]+)*$"
+                oninput="this.value = this.value.replace(/[^A-Za-z ]/g, '').replace(/\s{2,}/g, ' ').replace(/^\s+/g, '');"/>
               {% if error_firstname %}
               <div class="text-danger">{{ error_firstname }}</div>
               {% endif %} </div>
@@ -28,7 +34,8 @@
           <div class="form-group required">
             <label class="col-sm-2 control-label" for="input-lastname">{{ entry_lastname }}</label>
             <div class="col-sm-10">
-              <input type="text" name="lastname" value="{{ lastname }}" placeholder="{{ entry_lastname }}" id="input-lastname" class="form-control" />
+              <input type="text" name="lastname" value="{{ lastname }}" placeholder="{{ entry_lastname }}" id="input-lastname" class="form-control" pattern="^[A-Za-z]+( [A-Za-z]+)*$"
+                oninput="this.value = this.value.replace(/[^A-Za-z ]/g, '').replace(/\s{2,}/g, ' ').replace(/^\s+/g, '');"/>
               {% if error_lastname %}
               <div class="text-danger">{{ error_lastname }}</div>
               {% endif %} </div>
@@ -36,7 +43,8 @@
           <div class="form-group">
             <label class="col-sm-2 control-label" for="input-company">{{ entry_company }}</label>
             <div class="col-sm-10">
-              <input type="text" name="company" value="{{ company }}" placeholder="{{ entry_company }}" id="input-company" class="form-control" />
+              <input type="text" name="company" value="{{ company }}" placeholder="{{ entry_company }}" id="input-company" class="form-control" pattern="^(?!\s).*"
+                oninput="this.value = this.value.replace(/^\s+/g, '')" />
             </div>
           </div>
           <div class="form-group required">
@@ -56,7 +64,8 @@
           <div class="form-group required">
             <label class="col-sm-2 control-label" for="input-city">{{ entry_city }}</label>
             <div class="col-sm-10">
-              <input type="text" name="city" value="{{ city }}" placeholder="{{ entry_city }}" id="input-city" class="form-control" />
+              <input type="text" name="city" value="{{ city }}" placeholder="{{ entry_city }}" id="input-city" class="form-control" pattern="^[A-Za-z]+( [A-Za-z]+)*$"
+                oninput="this.value = this.value.replace(/[^A-Za-z ]/g, '').replace(/\s{2,}/g, ' ').replace(/^\s+/g, '');"/>
               {% if error_city %}
               <div class="text-danger">{{ error_city }}</div>
               {% endif %} </div>
@@ -64,7 +73,10 @@
           <div class="form-group required">
             <label class="col-sm-2 control-label" for="input-postcode">{{ entry_postcode }}</label>
             <div class="col-sm-10">
-              <input type="text" name="postcode" value="{{ postcode }}" placeholder="{{ entry_postcode }}" id="input-postcode" class="form-control" />
+              <input type="text" name="postcode" value="{{ postcode }}" placeholder="{{ entry_postcode }}" id="input-postcode" class="form-control" pattern="^\d{6}$"
+               maxlength="6"
+               minlength="6"
+               oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);"/>
               {% if error_postcode %}
               <div class="text-danger">{{ error_postcode }}</div>
               {% endif %} </div>
@@ -271,7 +283,7 @@
           </div>
         </fieldset>
         <div class="buttons clearfix">
-          <div class="pull-left"><a href="{{ back }}" class="btn btn-default">{{ button_back }}</a></div>
+          {#<div class="pull-left"><a href="{{ back }}" class="btn btn-default">{{ button_back }}</a></div>#}
           <div class="pull-right">
             <input type="submit" value="{{ button_continue }}" class="btn btn-primary" />
           </div>
@@ -279,6 +291,7 @@
       </form>
       {{ content_bottom }}</div>
     {{ column_right }}</div>
+</div>
 </div>
 <script type="text/javascript"><!--
 // Sort the custom fields

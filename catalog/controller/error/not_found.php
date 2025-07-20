@@ -34,6 +34,10 @@ class ControllerErrorNotFound extends Controller {
 		}
 
 		$data['continue'] = $this->url->link('common/home');
+		
+// 		07-06-2025
+        $data['redirect_to_home'] = true; // ✅ for use in Twig to trigger redirect
+
 
 		$data['column_left'] = $this->load->controller('common/column_left');
 		$data['column_right'] = $this->load->controller('common/column_right');

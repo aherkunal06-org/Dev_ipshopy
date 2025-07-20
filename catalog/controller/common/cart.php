@@ -48,7 +48,8 @@ class ControllerCommonCart extends Controller {
 		}
 
 		$data['text_items'] = sprintf($this->language->get('text_items'), $this->cart->countProducts() + (isset($this->session->data['vouchers']) ? count($this->session->data['vouchers']) : 0), $this->currency->format($total, $this->session->data['currency']));
-
+        $data['cart_product_count']=$this->cart->countProducts();
+        // var_dump($data['cart_product_count']);
 		$this->load->model('tool/image');
 		$this->load->model('tool/upload');
 

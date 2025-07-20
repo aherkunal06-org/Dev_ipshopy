@@ -1,5 +1,24 @@
 <?php
 class ModelAccountCustomer extends Model {
+    
+	// ---------------image-functions----------
+
+	public function getProfileImage($customer_id) {
+		$query = $this->db->query("SELECT profile_image FROM " . DB_PREFIX . "customer WHERE customer_id = '" . (int)$customer_id . "'");
+		return $query->row['profile_image'] ?? '';
+	}
+	
+	public function editProfileImage($customer_id, $filename) {
+		$this->db->query("UPDATE " . DB_PREFIX . "customer SET profile_image = '" . $this->db->escape($filename) . "' WHERE customer_id = '" . (int)$customer_id . "'");
+	}
+public function editCustomernew($data) {
+		$this->db->query("UPDATE `" . DB_PREFIX . "customer` SET 
+			firstname = '" . $this->db->escape($data['firstname']) . "', 
+			lastname = '" . $this->db->escape($data['lastname']) . "', 
+			email = '" . $this->db->escape($data['email']) . "', 
+			telephone = '" . $this->db->escape($data['telephone']) . "' 
+			WHERE customer_id = '" . (int)$this->customer->getId() . "'");
+	}
 	public function addCustomer($data) {
 		if (isset($data['customer_group_id']) && is_array($this->config->get('config_customer_group_display')) && in_array($data['customer_group_id'], $this->config->get('config_customer_group_display'))) {
 			$customer_group_id = $data['customer_group_id'];
@@ -148,5 +167,28 @@ class ModelAccountCustomer extends Model {
 		$query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "customer_affiliate` WHERE `tracking` = '" . $this->db->escape($tracking) . "'");
 
 		return $query->row;
-	}			
+	}	
+	
+	
+    // getCustomerFirstNameById	added on 13-04-2025 for showing customer name 
+	public function getCustomerFirstNameById($customer_id) {
+		$query = $this->db->query("SELECT firstname FROM " . DB_PREFIX . "customer WHERE customer_id = '" . (int)$customer_id . "'");
+
+		if ($query->num_rows) {
+			return $query->row['firstname'];
+		}
+
+		return '';
+	}
+	
+	//---- added code changes for pincode serviceability on 04-06-2025-------------------------
+	public function getPincodeHistory($customer_id) {
+		$query = $this->db->query("SELECT pincode FROM " . DB_PREFIX . "customer_pincode_history WHERE customer_id = '" . (int)$customer_id . "' ORDER BY date_added DESC LIMIT 5");
+		return array_column($query->rows, 'pincode');
+	}
+	
+	public function addPincodeHistory($customer_id, $pincode) {
+		$this->db->query("INSERT INTO " . DB_PREFIX . "customer_pincode_history SET customer_id = '" . (int)$customer_id . "', pincode = '" . $this->db->escape($pincode) . "', date_added = NOW()");
+	}
+	//------------------------------------------------------------------------------------------
 }

@@ -16,6 +16,15 @@ $_['text_option_value']      = 'Option Value';
 $_['text_percent']           = 'Percentage';
 $_['text_amount']            = 'Fixed Amount';
 $_['text_keyword']           = 'Do not use spaces, instead replace spaces with - and make sure the SEO URL is globally unique.';
+// added changes on 27-04-2025
+
+$_['text_gst_rate'] = 'GST Rate';
+$_['text_select_gst_rate'] = 'Select GST Rate';
+$_['text_gst_rate']            = 'GST Rate';
+$_['text_hsn_code']            = 'HSN Code';
+$_['entry_hsn_placeholder']    = 'Enter HSN Code';
+$_['hsn_error']                = 'Invalid HSN Code or not found';
+
 
 // Column
 $_['column_name']            = 'Product Name';
@@ -25,6 +34,13 @@ $_['column_price']           = 'Price';
 $_['column_quantity']        = 'Quantity';
 $_['column_status']          = 'Status';
 $_['column_action']          = 'Action';
+$_['column_approved_by']      = 'Approved By';
+
+// added the code for the show username 21-05-2025
+
+$_['column_added_by']        = 'Added By';
+$_['column_edited_by']        = 'Edited By';
+//------------------------------------------------------
 
 // Entry
 $_['entry_name']             = 'Product Name';
@@ -54,7 +70,7 @@ $_['entry_points']           = 'Points';
 $_['entry_option_points']    = 'Points';
 $_['entry_subtract']         = 'Subtract Stock';
 $_['entry_weight_class']     = 'Weight Class';
-$_['entry_weight']           = 'Weight';
+$_['entry_weight']           = 'Actual Weight';
 $_['entry_dimension']        = 'Dimensions (L x W x H)';
 $_['entry_length_class']     = 'Length Class';
 $_['entry_length']           = 'Length';
@@ -83,6 +99,10 @@ $_['entry_reward']           = 'Reward Points';
 $_['entry_layout']           = 'Layout Override';
 $_['entry_recurring']        = 'Recurring Profile';
 
+// added on 04-04-2025
+$_['entry_actual_weight']   = 'Actual Weight';
+$_['entry_volumetric_weight'] = 'Volumetric Weight';
+
 // Help
 $_['help_sku']               = 'Stock Keeping Unit';
 $_['help_upc']               = 'Universal Product Code';
@@ -108,3 +128,79 @@ $_['error_meta_title']       = 'Meta Title must be greater than 1 and less than 
 $_['error_model']            = 'Product Model must be greater than 1 and less than 64 characters!';
 $_['error_keyword']          = 'SEO URL already in use!';
 $_['error_unique']           = 'SEO URL must be unique!';
+$_['error_special_price'] = 'Special price cannot be greater than MRP.';
+
+// added changes on 27-04-2025--------------------
+$_['error_hsn_not_found'] = 'HSN code not found.';
+$_['error_warning']          = 'Warning: Please check the form carefully for errors!';
+$_['error_permission']       = 'Warning: You do not have permission to modify products!';
+// $_['error_name']             = 'Product Name must be greater than 1 and less than 255 characters!';
+$_['error_name'] = 'Product Name must be greater than 3 and less than 255 characters!';
+// $_['error_meta_title']       = 'Meta Title must be greater than 1 and less than 255 characters!';
+$_['error_meta_title'] = 'Meta Title must be greater than 3 and less than 255 characters!';
+// $_['error_model']            = 'Product Model must be greater than 1 and less than 64 characters!';
+$_['error_model'] = 'Model must be greater than 3 and less than 64 characters!';
+$_['error_keyword']          = 'SEO URL already in use!';
+$_['error_unique']           = 'SEO URL must be unique!';
+// $_['error_price']            = 'Price is required and must be greater than zero!';
+$_['error_length']           = 'Length is required!';
+$_['error_width']            = 'Width is required!';
+$_['error_height']           = 'Height is required!';
+$_['error_weight ']          = 'Weight is required!';
+$_['error_name']             = 'Product name is required';
+$_['error_meta_title']      = 'Meta title is required';
+$_['error_model']           = 'Model name is required';
+$_['error_hsn_code']       = 'HSN code is required';
+$_['error_weight'] = 'Actual weight is required';
+$_['error_vendor_invalid'] = 'Seller name can only contain letters and spaces!';
+
+// -----------------------------------------------------------------------------------------------
+
+$_['error_price'] = 'Price is required!';
+$_['error_price_invalid']   = 'Please enter a valid price (numeric, greater than 0)!';
+$_['error_hsn_not_found'] = 'HSN code not found.';
+$_['error_hsn_empty'] = 'Please enter an HSN code.';
+$_['error_hsn_empty'] = 'Please enter an HSN code.';
+$_['error_name']             = 'Product name is required';
+$_['error_meta_title']      = 'Meta title is required';
+$_['error_model']           = 'Model name is required';
+$_['error_model_length']          = 'Model must be greater than 3 and less than 64 characters!';
+$_['error_price_required']        = 'Price is required!';
+$_['error_hsn_code_required']     = 'HSN Code is required!';
+$_['error_gst_rate_required']     = 'GST Rate is required!';
+$_['error_length_required']       = 'Length is required!';
+$_['error_width_required']        = 'Width is required!';
+$_['error_height_required']       = 'Height is required!';
+$_['error_weight'] =  'Actual Weight is required!';
+$_['error_manufacturer'] = 'Manufacturer is required!';
+$_['error_vendor'] = 'Seller is required';
+$_['error_length_invalid']        = 'Please enter a valid positive number for Length!';
+$_['error_width_invalid']         = 'Please enter a valid positive number for Width!';
+$_['error_height_invalid']        = 'Please enter a valid positive number for Height!';
+// -------------------------------------------------------------------------------------------------
+
+//  added on 19-04-2025 related to image validation------------------------------------------
+$_['error_image'] = 'Please add an image!';
+$_['error_image_required'] = 'Please select an image in this row!';
+$_['error_dynamic_image_count'] = 'Please Select Minimum  %s More Images';
+
+
+
+// added on 28-04-2025
+
+$_['entry_return']           = 'Return';
+$_['entry_refund']           = 'Refund';
+$_['entry_replace']          = 'Replace';
+
+$_['column_return']          = 'Return';
+$_['column_refund']          = 'Refund';
+$_['column_replace']         = 'Replace';
+
+// added on 29-04-2025
+$_['entry_min_quantity'] = 'Min Quantity';
+$_['entry_max_quantity'] = 'Max Quantity';
+
+
+// --------------------------------------------------------------
+
+$_['entry_payment'] = 'Payment Method';

@@ -66,3 +66,36 @@
     </ul>
   </div>
 </nav>
+
+
+{# addedon 25-04-2025------------------ #}
+{#<script>#}
+{#	document.addEventListener("DOMContentLoaded", function () { #}
+{#const vendorlist = document.getElementById('collapse2');#}
+{#const liItems = vendorlist.querySelectorAll("li");#}
+{#let link='{{seller_payments_link|e("js") }}';#}
+//console.log('link',link);
+{#const newLi = document.createElement("li");#}
+{#newLi.innerHTML = `<li><a href="${link}">Seller payments</a></li>`;#}
+
+
+{#if (liItems.length >= 10) {#}
+{#const tenthLi = liItems[9];#}
+{#tenthLi.parentNode.insertBefore(newLi, tenthLi.nextSibling);#}
+{#} else { #}
+{#ul.appendChild(newLi);#}
+{#}#}
+{#});#}
+{#</script>#}
+{#<script>#}
+{#  document.addEventListener("DOMContentLoaded", function () {#}
+{#    if (document.querySelector('#column-left')) {#}
+{#      const content = document.querySelector('#content');#}
+{#      const footer = document.querySelector('#footer');#}
+
+{#      if (content) content.style.marginLeft = '235px';#}
+{#      if (footer) footer.style.marginLeft = '235px';#}
+{#    }#}
+{#  });#}
+{#</script>#}
+

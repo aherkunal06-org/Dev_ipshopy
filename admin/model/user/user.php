@@ -32,7 +32,7 @@ class ModelUserUser extends Model {
 		return $query->row;
 	}
 
-	public function getUserByUsername($username) {
+    public function getUserByUsername($username) {
 		$query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "user` WHERE username = '" . $this->db->escape($username) . "'");
 
 		return $query->row;
@@ -50,43 +50,102 @@ class ModelUserUser extends Model {
 		return $query->row;
 	}
 
+// 	public function getUsers($data = array()) {
+// // 		$sql = "SELECT * FROM `" . DB_PREFIX . "user`";
+//         $sql = "SELECT * FROM `" . DB_PREFIX . "user`";
+
+// 		$sort_data = array(
+// 			'username',
+// 			'status',
+// 			'date_added'
+// 		);
+		
+// 		// Filter by user_id - Shubham Sir 29/05/2025
+//         if (!empty($data['filter_user_id'])) {
+//             $sql .= " AND user_id = '" . (int)$data['filter_user_id'] . "'";
+//         }
+    
+//         // Filter by name (username or full name)
+//         if (!empty($data['filter_name'])) {
+//             $escaped_name = $this->db->escape($data['filter_name']);
+//             $sql .= " AND (username LIKE '%" . $escaped_name . "%' OR CONCAT(firstname, ' ', lastname) LIKE '%" . $escaped_name . "%')";
+//         }
+	
+//         // Filter by email
+//         if (!empty($data['filter_email'])) {
+//             $sql .= " AND email LIKE '" . $this->db->escape($data['filter_email']) . "%'";
+//         }
+
+// 		if (isset($data['sort']) && in_array($data['sort'], $sort_data)) {
+// 			$sql .= " ORDER BY " . $data['sort'];
+// 		} else {
+// 			$sql .= " ORDER BY username";
+// 		}
+
+// 		if (isset($data['order']) && ($data['order'] == 'DESC')) {
+// 			$sql .= " DESC";
+// 		} else {
+// 			$sql .= " ASC";
+// 		}
+
+// 		if (isset($data['start']) || isset($data['limit'])) {
+// 			if ($data['start'] < 0) {
+// 				$data['start'] = 0;
+// 			}
+
+// 			if ($data['limit'] < 1) {
+// 				$data['limit'] = 20;
+// 			}
+
+// 			$sql .= " LIMIT " . (int)$data['start'] . "," . (int)$data['limit'];
+// 		}
+
+// 		$query = $this->db->query($sql);
+
+// 		return $query->rows;
+// 	}
+    //updated the code on 13/07/2025
 	public function getUsers($data = array()) {
-		$sql = "SELECT * FROM `" . DB_PREFIX . "user`";
-
-		$sort_data = array(
-			'username',
-			'status',
-			'date_added'
-		);
-
-		if (isset($data['sort']) && in_array($data['sort'], $sort_data)) {
-			$sql .= " ORDER BY " . $data['sort'];
-		} else {
-			$sql .= " ORDER BY username";
-		}
-
-		if (isset($data['order']) && ($data['order'] == 'DESC')) {
-			$sql .= " DESC";
-		} else {
-			$sql .= " ASC";
-		}
-
-		if (isset($data['start']) || isset($data['limit'])) {
-			if ($data['start'] < 0) {
-				$data['start'] = 0;
-			}
-
-			if ($data['limit'] < 1) {
-				$data['limit'] = 20;
-			}
-
-			$sql .= " LIMIT " . (int)$data['start'] . "," . (int)$data['limit'];
-		}
-
-		$query = $this->db->query($sql);
-
-		return $query->rows;
-	}
+        $sql = "SELECT * FROM `" . DB_PREFIX . "user`";
+    
+        if (!empty($data['filter_username'])) {
+            $sql .= "where username LIKE '" . $this->db->escape($data['filter_username']) . "%'";
+        }
+    
+        $sort_data = array(
+            'username',
+            'status',
+            'date_added'
+        );
+    
+        if (isset($data['sort']) && in_array($data['sort'], $sort_data)) {
+            $sql .= " ORDER BY " . $data['sort'];
+        } else {
+            $sql .= " ORDER BY username";
+        }
+    
+        if (isset($data['order']) && ($data['order'] == 'DESC')) {
+            $sql .= " DESC";
+        } else {
+            $sql .= " ASC";
+        }
+    
+        if (isset($data['start']) || isset($data['limit'])) {
+            if ($data['start'] < 0) {
+                $data['start'] = 0;
+            }
+    
+            if ($data['limit'] < 1) {
+                $data['limit'] = 20;
+            }
+    
+            $sql .= " LIMIT " . (int)$data['start'] . "," . (int)$data['limit'];
+        }
+    
+        $query = $this->db->query($sql);
+    
+        return $query->rows;
+    }
 
 	public function getTotalUsers() {
 		$query = $this->db->query("SELECT COUNT(*) AS total FROM `" . DB_PREFIX . "user`");

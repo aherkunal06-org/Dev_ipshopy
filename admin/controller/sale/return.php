@@ -354,8 +354,30 @@ class ControllerSaleReturn extends Controller {
 		$return_total = $this->model_sale_return->getTotalReturns($filter_data);
 
 		$results = $this->model_sale_return->getReturns($filter_data);
+		
+        
 
 		foreach ($results as $result) {
+		    // added code product return on 20-05-2025 ----------------------------
+		    if (!$result['approved']) {
+				$approve = $this->url->link('sale/return/approveReturn', 'user_token=' . $this->session->data['user_token'] . '&return_id=' . $result['return_id'] . $url, true);
+			} else {
+				$approve = '';
+			}
+			if ($result['approved']) {
+				$disapproved = $this->url->link('sale/return/disapproveReturn', 'user_token=' . $this->session->data['user_token'] . '&return_id=' . $result['return_id'] .  $url, true);
+			} else {
+				$disapproved = '';
+			}
+			if( $result['approved']==1){
+				$status = $this->language->get('text_enable');
+			} elseif($result['approved']==0) {
+				$status = $this->language->get('text_waitingapproved');
+			} else  {
+				$status = $this->language->get('text_disable');
+			}
+			//-------------------------------------------------------------------------
+			
 			$data['returns'][] = array(
 				'return_id'     => $result['return_id'],
 				'order_id'      => $result['order_id'],
@@ -365,7 +387,12 @@ class ControllerSaleReturn extends Controller {
 				'return_status' => $result['return_status'],
 				'date_added'    => date($this->language->get('date_format_short'), strtotime($result['date_added'])),
 				'date_modified' => date($this->language->get('date_format_short'), strtotime($result['date_modified'])),
-				'edit'          => $this->url->link('sale/return/edit', 'user_token=' . $this->session->data['user_token'] . '&return_id=' . $result['return_id'] . $url, true)
+				'edit'          => $this->url->link('sale/return/edit', 'user_token=' . $this->session->data['user_token'] . '&return_id=' . $result['return_id'] . $url, true),
+				// added code for product return on 20-05-2025
+				'image'         => $this->url->link('sale/return_images', 'user_token=' . $this->session->data['user_token'] . '&return_id=' . $result['return_id'] . $url, true),
+				'approve'		  => $approve,
+				'disapproved'	  => $disapproved
+				//-------------------------------------
 			);
 		}
 
@@ -916,4 +943,244 @@ class ControllerSaleReturn extends Controller {
 		$this->response->addHeader('Content-Type: application/json');
 		$this->response->setOutput(json_encode($json));
 	}	
+	
+	// added code for product return 20-05-2025 ------------- 
+	
+	public function approveReturn() {
+		$json = [];
+	
+		if (!$this->user->hasPermission('modify', 'sale/return')) {
+			$json['error'] = "Permission denied!";
+		} else {
+			$return_id = $this->request->post['return_id'];
+	        
+			// Load necessary models
+			$this->load->model('sale/return');
+			$this->load->model('sale/order');
+			$this->load->model('catalog/product');
+			
+	
+			// Fetch return order details
+			$return_info = $this->model_sale_return->getReturn($return_id);
+			var_dump("return info ========>",$return_info);
+			if (!$return_info) {
+				$json['error'] = "Invalid Return ID!";
+				$this->response->setOutput(json_encode($json));
+				return;
+			} 
+	
+			$order_id = $return_info['order_id'];
+			$order_info = $this->model_sale_order->getOrder($order_id);
+// 			var_dump($order_info);
+			if (!$order_info || empty($order_info)){
+				$json['error'] = "Invalid Order ID!";
+				$this->response->setOutput(json_encode($json));
+				return;
+			}
+	
+			// Fetch product details
+			$product_info = $this->model_catalog_product->getProduct($return_info['product_id']);
+			var_dump($order_info);
+			if (!$product_info) {
+				$json['error'] = "Invalid Product!";
+				$this->response->setOutput(json_encode($json));
+				return;
+			}
+	
+			// Construct the payload dynamically
+			$shipway_payload = [
+				"order_id" => $order_info['order_id'],
+				"return_order_status" => "R",
+			    // "carrier_id" => "80165",
+				"return_warehouse_id" => "58067",
+				"refund_payment_id" => "1",
+				"transfer_details" => [
+					"account_number" => "12345678904444",
+					"phone" => "xxxxxxxx78",
+					"ifsc_code" => "HDFC0004393",
+					"account_type" => "saving",
+					"beneficiary_name" => "Pooja",
+					"bank_name" => "HDFC Bank"
+				],
+				"products" => [
+					[
+						"product" => $product_info['name'],
+						"price" => $product_info['total'],
+				// 		"price" => "30",
+						"product_code" => $product_info['model'],
+						// "hsn_code" => "213456",
+						// "amount" => "1",
+						// "discount" => "0",
+						// "tax_rate" => "5",
+						// "tax_title" => "IGST",
+						 "return_reason_id" => "79356",
+						// "return_products_images" => [
+						// 	"https://example.com/sample1.jpg",
+						// 	"https://example.com/sample2.jpg"
+						// ],
+						"customer_notes" => $return_info['comment'],
+						// "variants" => "red"
+					]
+				],
+				"discount" => "0",
+				// "shipping" => $order_info['shipping_cost'],
+				"order_total" => $order_info['total'],
+				"gift_card_amt" => "100",
+				"taxes" => "40",
+				// "payment_type" => $order_info['payment_code'],
+				"payment_type" => ($order_info['payment_code'] == 'cod') ? 'C' : 'P',
+				"email" => $order_info['email'],
+				"billing_address" => $order_info['payment_address_1'],
+				"billing_address2" => $order_info['payment_address_2'],
+				"billing_city" => $order_info['payment_city'],
+				"billing_state" => $order_info['payment_zone'],
+				"billing_country" => $order_info['payment_country'],
+				"billing_firstname" => $order_info['payment_firstname'],
+				"billing_lastname" => $order_info['payment_lastname'],
+				"billing_phone" => $order_info['telephone'],
+				"billing_zipcode" => $order_info['payment_postcode'],
+				"shipping_address" => $order_info['shipping_address_1'],
+				"shipping_address2" => $order_info['shipping_address_2'],
+				"shipping_city" => $order_info['shipping_city'],
+				"shipping_state" => $order_info['shipping_zone'],
+				"shipping_country" => $order_info['shipping_country'],
+				"shipping_firstname" => $order_info['shipping_firstname'],
+				"shipping_lastname" => $order_info['shipping_lastname'],
+				"shipping_phone" => $order_info['telephone'],
+				"shipping_zipcode" => $order_info['shipping_postcode'],
+				"order_weight" => "110",
+				"box_length" => "20",
+				"box_breadth" => "15",
+				"box_height" => "10",
+				"order_date" => $order_info['date_added'],
+				"quality_check" => 1,
+				"qc_checkurl" => [
+					"https://example.com/sample1.jpg",
+					"https://example.com/sample2.jpg"
+				],
+				"qc_text_capture" => [
+					[
+						"qc_text_capture_label" => "IMEI",
+						"qc_text_capture_value" => "TEXT",
+						"value_to_check" => "3421"
+					]
+				]
+			];
+	       //  var_dump($shipway_payload);  
+			// Call Shipway API
+			$shipway_api_url = "https://app.shipway.com/api/Createreturns";
+			$shipway_username = "ipshopy1@gmail.com";
+			// $api_key = "96V1f01z291K02U1jg35s5Sb93gB4QmY"; // Replace with actual API Key
+			$shipway_key = "96V1f01z291K02U1jg35s5Sb93gB4QmY";
+
+			$credentials = base64_encode("$shipway_username:$shipway_key");
+
+			$ch = curl_init($shipway_api_url);
+			curl_setopt($ch, CURLOPT_HTTPHEADER, [
+				// "Authorization: Basic " . base64_encode($api_key),
+				"Authorization: Basic " . $credentials,
+				"Content-Type: application/json"
+			]);
+			// curl_setopt($ch, CURLOPT_POST, true);
+			// curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($shipway_payload));
+			// curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_POST, true);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($shipway_payload));
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Try disabling SSL verification (not recommended for production)
+			curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30); 
+				
+			$response = curl_exec($ch);
+		
+// 			var_dump($response);
+			$json['res'] =$response;
+			$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+			$error = curl_error($ch);
+			curl_close($ch);
+// 			var_dump($http_code);
+			$shipwayResponse = json_decode($response, true);
+
+			if ($http_code == 200 || (
+				(isset($shipwayResponse["success"]) && $shipwayResponse["success"] == 1)
+			)) {
+
+
+				// $awb_no = isset($shipwayResponse["awb_response"]["AWB"]) ? $shipwayResponse["awb_response"]["AWB"] : null;
+				// $label_url = isset($shipwayResponse["awb_response"]["shipping_url"]) ? $shipwayResponse["awb_response"]["shipping_url"] : null;
+				$rma_no = isset($shipwayResponse["create_return_response"]["rma_no"]) ? $shipwayResponse["create_return_response"]["rma_no"] : null;
+
+				$json['success'] = "Return shipment created successfully!";
+		
+				// $this->model_sale_return->approve($return_id,$rma_no); 
+				$product_id = $return_info['product_id']; // already fetched above
+			$this->model_sale_return->approve($return_id, $product_id, $rma_no);
+			} else {
+				$json['error'] = "Failed to create return shipment.";
+			}
+		}
+	
+		$this->response->addHeader('Content-Type: application/json');
+		$this->response->setOutput(json_encode($json));
+      
+		
+		
+	}
+	
+	public function disapproveReturn() {
+		$this->load->language('sale/return'); // Load the correct language file
+		$this->document->setTitle($this->language->get('heading_title'));
+		$this->load->model('sale/return'); // Load the correct model
+	
+		$disapproves = array();
+	
+		if (isset($this->request->post['selected'])) {
+			$disapproves = $this->request->post['selected'];
+		} elseif (isset($this->request->get['return_id'])) {
+			$disapproves[] = $this->request->get['return_id'];
+		}
+	
+		if ($disapproves ) {
+			foreach ($disapproves as $return_id) {
+				$this->model_sale_return->disapprove($return_id); // Call the disapprove function for return
+			}
+	
+			$this->session->data['success'] = $this->language->get('text_success');
+			$url = '';
+	
+			/* 18 02 2020 - Preserve Filters */
+			if (isset($this->request->get['filter_customer'])) {
+				$url .= '&filter_customer=' . $this->request->get['filter_customer'];
+			}
+	
+			if (isset($this->request->get['filter_status'])) {
+				$url .= '&filter_status=' . $this->request->get['filter_status'];
+			}
+	
+			// if (isset($this->request->get['filter_approved'])) {
+			// 	$url .= '&filter_approved=' . $this->request->get['filter_approved'];
+			// }
+	
+			if (isset($this->request->get['filter_date'])) {
+				$url .= '&filter_date=' . $this->request->get['filter_date'];
+			}
+	
+			/* Sorting and Pagination */
+			if (isset($this->request->get['sort'])) {
+				$url .= '&sort=' . $this->request->get['sort'];
+			}
+			if (isset($this->request->get['order'])) {
+				$url .= '&order=' . $this->request->get['order'];
+			}
+			if (isset($this->request->get['page'])) {
+				$url .= '&page=' . $this->request->get['page'];
+			}
+	
+			// Redirect back to the return list after disapproval
+			$this->response->redirect($this->url->link('sale/return', 'user_token=' . $this->session->data['user_token'] . $url, true));
+		}
+	
+		$this->getList(); // Load the return list view
+	}
+	//--------------------------------------------------------------
+	
 }

@@ -56,7 +56,8 @@ class ControllerCheckoutCart extends Controller {
 			$data['products'] = array();
 
 			$products = $this->cart->getProducts();
-
+            $courierChargess=0;   //for courier charges
+            $sub_total=0; //for courier charges
 			foreach ($products as $product) {
 				$product_total = 0;
 
@@ -129,7 +130,41 @@ class ControllerCheckoutCart extends Controller {
 						$recurring .= sprintf($this->language->get('text_payment_cancel'), $this->currency->format($this->tax->calculate($product['recurring']['price'] * $product['quantity'], $product['tax_class_id'], $this->config->get('config_tax')), $this->session->data['currency']), $product['recurring']['cycle'], $frequencies[$product['recurring']['frequency']], $product['recurring']['duration']);
 					}
 				}
-
+				// courier charges starts
+					$Total=$unit_price*$product['quantity'];
+						$sub_total += $Total;
+				$this->load->model('catalog/product');
+            	$courierResult = $this->model_catalog_product->getCourierCharges($product['product_id'], $data['selected_shipping_details']["postcode"]);
+				if ($courierResult['courier_charge']) {
+					$courierCharges = $courierResult['courier_charge'];
+				
+					$freeCharges = $courierResult['freeCharges'];
+					$localCharges =  $courierResult['local_charges'];
+			
+					$quantity = (int)$product['quantity'];
+					if ((float)$product['quantity'] === 1) {
+						$final_courier_charges = (float)$courierCharges;
+						$grand_total = (float)$final_courier_charges + $Total;
+					} else if ((float)$product['quantity'] < (float)$freeCharges) {
+						$final_courier_charges = (float)$localCharges * (float)$quantity; // FIXED LOGIC
+						$grand_total = (float)$final_courier_charges + $Total;
+					} else {
+						$final_courier_charges = 0;
+						$grand_total = (float)$final_courier_charges + $Total;
+					}
+				} else {
+				    if($Total < 500)
+				    {
+					    $final_courier_charges = 80;
+				    }
+				    else{
+				        $final_courier_charges = 0;
+				    }
+					$grand_total = $Total + $final_courier_charges;
+				 
+				}
+				 $courierChargess += $final_courier_charges;
+				//  courier charges end s
 				$data['products'][] = array(
 					'cart_id'   => $product['cart_id'],
 					'thumb'     => $image,
@@ -141,11 +176,20 @@ class ControllerCheckoutCart extends Controller {
 					'stock'     => $product['stock'] ? true : !(!$this->config->get('config_stock_checkout') || $this->config->get('config_stock_warning')),
 					'reward'    => ($product['reward'] ? sprintf($this->language->get('text_points'), $product['reward']) : ''),
 					'price'     => $price,
+					'courier_charges' =>  $final_courier_charges,
+					'free_charges' => $freeCharges,
+					'local_charges' => $freeCharges,
+					'zonal_charges' => $freeCharges,
+					'national_charges' => $freeCharges,
 					'total'     => $total,
+					'grand_total'     => $grand_total,
 					'href'      => $this->url->link('product/product', 'product_id=' . $product['product_id'])
 				);
 			}
-
+			$data['courierCharges'] =  $courierChargess;
+			$data['grand_total'] = $courierChargess + $sub_total;
+			$data['sub_total'] = $this->currency->format($sub_total, $this->session->data['currency']);
+            // var_dump($data);
 			// Gift Voucher
 			$data['vouchers'] = array();
 

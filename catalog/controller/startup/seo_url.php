@@ -14,6 +14,30 @@ class ControllerStartupSeoUrl extends Controller {
 			if (utf8_strlen(end($parts)) == 0) {
 				array_pop($parts);
 			}
+			if (isset($this->request->get['_route_'])){
+                if ($this->request->get['_route_'] == 'account-transaction') {
+                    $this->request->get['route'] = 'account/transaction';
+                    return;
+                }
+            
+                if ($this->request->get['_route_'] == 'checkout-test') {
+                    $this->request->get['route'] = 'checkout/checkout_test';
+                    return;
+                }
+                if ($this->request->get['_route_'] == 'seller-fees') {
+                    $this->request->get['route'] = 'vendor/seller_pages/fees';
+                    return;
+                }
+                if ($this->request->get['_route_'] == 'seller-success-stories') {
+                    $this->request->get['route'] = 'vendor/seller_pages/success_stories';
+                    return;
+                }
+                if ($this->request->get['_route_'] == 'seller-landing') {
+                    $this->request->get['route'] = 'vendor/seller_pages/seller_landing';
+                    return;
+                }
+			}
+
 
 			foreach ($parts as $part) {
 				$query = $this->db->query("SELECT * FROM " . DB_PREFIX . "seo_url WHERE keyword = '" . $this->db->escape($part) . "' AND store_id = '" . (int)$this->config->get('config_store_id') . "'");
@@ -51,6 +75,7 @@ class ControllerStartupSeoUrl extends Controller {
 				}
 			}
 
+
 			if (!isset($this->request->get['route'])) {
 				if (isset($this->request->get['product_id'])) {
 					$this->request->get['route'] = 'product/product';
@@ -73,7 +98,33 @@ class ControllerStartupSeoUrl extends Controller {
 		$data = array();
 
 		parse_str($url_info['query'], $data);
-
+		
+        if (isset($data['route'])) {
+            switch ($data['route']) {
+                case 'checkout/checkout_test':
+                    $url .= '/checkout-test';
+                    unset($data['route']);
+                    break;
+                case 'account/transaction':
+                    $url .= '/account-transaction';
+                    unset($data['route']);
+                    break;
+                case 'vendor/seller_pages/fees':
+                    $url .= '/seller-fees';
+                    unset($data['route']);
+                    break;
+                case 'vendor/seller_pages/success_stories':
+                    $url .= '/seller-success-stories';
+                    unset($data['route']);
+                    break;
+                case 'vendor/seller_pages/seller_landing':
+                    $url .= '/seller-landing';
+                    unset($data['route']);
+                    break;
+            }
+            
+        }
+            
 		foreach ($data as $key => $value) {
 			if (isset($data['route'])) {
 				if (($data['route'] == 'product/product' && $key == 'product_id') || (($data['route'] == 'product/manufacturer/info' || $data['route'] == 'product/product') && $key == 'manufacturer_id') || ($data['route'] == 'information/information' && $key == 'information_id')) {

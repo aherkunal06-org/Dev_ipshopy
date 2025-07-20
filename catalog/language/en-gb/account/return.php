@@ -20,6 +20,9 @@ $_['text_comment']       = 'Return Comments';
 $_['text_history']       = 'Return History';
 $_['text_empty']         = 'You have not made any previous returns!';
 $_['text_agree']         = 'I have read and agree to the <a href="%s" class="agree"><b>%s</b></a>';
+//added chnages for the product return 20-05-2025 -------
+$_['text_return_image']      = 'Image';
+//---------------------------------------------------------
 
 // Column
 $_['column_return_id']   = 'Return ID';
@@ -36,6 +39,12 @@ $_['column_comment']     = 'Comment';
 $_['column_reason']      = 'Reason';
 $_['column_action']      = 'Action';
 
+// ===added changes for prodcut return on 20-05-2025
+$_['column_reason']      = 'Return Reason';
+$_['column_opened']      = 'Opened';
+$_['column_comment']     = 'Comment';
+$_['column_return_date'] = 'Return Date';
+//---------------------------------------------------
 // Entry
 $_['entry_order_id']     = 'Order ID';
 $_['entry_date_ordered'] = 'Order Date';
@@ -61,3 +70,6 @@ $_['error_product']      = 'Product Name must be greater than 3 and less than 25
 $_['error_model']        = 'Product Model must be greater than 3 and less than 64 characters!';
 $_['error_reason']       = 'You must select a return product reason!';
 $_['error_agree']        = 'Warning: You must agree to the %s!';
+//added changes for product return on 20-05-2025--
+$_['error_image_required'] = 'You must upload at least one image for your return!';
+//----------------------------------------------------

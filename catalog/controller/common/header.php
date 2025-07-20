@@ -25,6 +25,8 @@ class ControllerCommonHeader extends Controller {
 		}
 
 		$data['title'] = $this->document->getTitle();
+		$data['route'] = isset($this->request->get['route']) ? $this->request->get['route'] : '';
+
 
 		$data['base'] = $server;
 		$data['description'] = $this->document->getDescription();
@@ -76,7 +78,120 @@ class ControllerCommonHeader extends Controller {
 		$data['search'] = $this->load->controller('common/search');
 		$data['cart'] = $this->load->controller('common/cart');
 		$data['menu'] = $this->load->controller('common/menu');
+		
+		// getCustomerFirstNameById	added on 13-04-2025 for showing customer name 
+		$this->load->model('account/customer');
+		$customer_id = $this->customer->getId();
+		$data['customer_firstname'] = $this->model_account_customer->getCustomerFirstNameById($customer_id);
+        $data['cart_product_count']=$this->cart->countProducts();
+        
+        // added on 24-06-2025 for canonical 
+        // === Canonical Tag Fix for SEO ===
+        // if (isset($this->request->get['route'])) {
+        //     $route = $this->request->get['route'];
+        
+        //     // Product page
+        //     if ($route == 'product/product' && isset($this->request->get['product_id'])) {
+        //         $product_id = (int)$this->request->get['product_id'];
+        //         $this->load->model('catalog/product');
+        //         $product_info = $this->model_catalog_product->getProduct($product_id);
+        //         if ($product_info) {
+        //             $canonical_link = $this->url->link('product/product', 'product_id=' . $product_id, true);
+        //             $this->document->addLink($canonical_link, 'canonical');
+        //         }
+        //     }
+        
+        //     // Category page
+        //     if ($route == 'product/category' && isset($this->request->get['path'])) {
+        //         $canonical_link = $this->url->link('product/category', 'path=' . $this->request->get['path'], true);
+        //         $this->document->addLink($canonical_link, 'canonical');
+        //     }
+        
+        //     // Information page
+        //     if ($route == 'information/information' && isset($this->request->get['information_id'])) {
+        //         $canonical_link = $this->url->link('information/information', 'information_id=' . $this->request->get['information_id'], true);
+        //         $this->document->addLink($canonical_link, 'canonical');
+        //     }
+        // }
 
+        // end here 
+        
+        // updated on 25-06-2025 for canonical 
+        
+        if (isset($this->request->get['route'])) {
+            $route = $this->request->get['route'];
+
+            // Product page
+            if ($route == 'product/product' && isset($this->request->get['product_id'])) {
+                $product_id = (int)$this->request->get['product_id'];
+                $this->load->model('catalog/product');
+                $product_info = $this->model_catalog_product->getProduct($product_id);
+                if ($product_info) {
+                    $canonical_link = $this->url->link('product/product', 'product_id=' . $product_id, true);
+                    $this->document->addLink($canonical_link, 'canonical');
+                }
+            }
+        
+            // Category page
+            if ($route == 'product/category' && isset($this->request->get['path'])) {
+                $canonical_link = $this->url->link('product/category', 'path=' . $this->request->get['path'], true);
+                $this->document->addLink($canonical_link, 'canonical');
+            }
+        
+            // Information page
+            if ($route == 'information/information' && isset($this->request->get['information_id'])) {
+                $canonical_link = $this->url->link('information/information', 'information_id=' . $this->request->get['information_id'], true);
+                $this->document->addLink($canonical_link, 'canonical');
+            }
+        
+            // Search Page (for canonical link)
+            if ($route == 'product/search' && isset($this->request->get['search'])) {
+                $search_query = $this->request->get['search'];
+                $canonical_link = $this->url->link('product/search', 'search=' . urlencode($search_query), true);
+                $this->document->addLink($canonical_link, 'canonical');
+            }
+        
+            // Filter Page (for canonical link)
+            if ($route == 'product/category' && isset($this->request->get['path']) && isset($this->request->get['filter'])) {
+                $canonical_link = $this->url->link('product/category', 'path=' . $this->request->get['path'], true);
+                $this->document->addLink($canonical_link, 'canonical');
+            }
+        
+            // Sort, Pagination & Filter (for category, search, etc.)
+            if (($route == 'product/category' || $route == 'product/search') && isset($this->request->get['path'])) {
+                // Handle base URL for canonical link
+                $canonical_link = $this->url->link($route, 'path=' . $this->request->get['path'], true);
+        
+                // If search page, add the search parameter
+                if ($route == 'product/search' && isset($this->request->get['search'])) {
+                    $canonical_link .= '&search=' . urlencode($this->request->get['search']);
+                }
+        
+                // Add filter parameter to canonical link if exists
+                if (isset($this->request->get['filter'])) {
+                    $canonical_link .= '&filter=' . urlencode($this->request->get['filter']);
+                }
+        
+                // Add sort and order to canonical link if exists
+                if (isset($this->request->get['sort']) || isset($this->request->get['order'])) {
+                    $canonical_link .= '&sort=' . urlencode($this->request->get['sort']) . '&order=' . urlencode($this->request->get['order']);
+                }
+        
+                // Handle pagination by removing the page parameter if it's not the first page
+                if (isset($this->request->get['page']) && $this->request->get['page'] > 1) {
+                    $canonical_link = preg_replace('/&page=\d+/', '', $canonical_link);
+                }
+        
+                // Add the canonical link to the document
+                $this->document->addLink($canonical_link, 'canonical');
+            }
+        }
+        
+        // end here 
+        
+        
+$data['seller_home'] = $this->url->link('vendor/seller_pages/seller_landing', '', true);
+        
 		return $this->load->view('common/header', $data);
 	}
 }

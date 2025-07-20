@@ -3,12 +3,19 @@ class ControllerAccountReset extends Controller {
 	private $error = array();
 
 	public function index() {
+	   //changes for fb error sdk 12/05/2025
+	    unset($this->session->data['facebook_state']);
+unset($this->session->data['facebook_access_token']);
+	   //changes for fb error sdk 12/05/2025 end
+
+
 		if ($this->customer->isLogged()) {
 			$this->response->redirect($this->url->link('account/account', '', true));
 		}
 
 		if (isset($this->request->get['code'])) {
 			$code = $this->request->get['code'];
+// 			var_dump($code);
 		} else {
 			$code = '';
 		}
@@ -81,6 +88,10 @@ class ControllerAccountReset extends Controller {
 			$data['content_bottom'] = $this->load->controller('common/content_bottom');
 			$data['footer'] = $this->load->controller('common/footer');
 			$data['header'] = $this->load->controller('common/header');
+			
+			$data['route'] = 'account/reset';
+
+            unset($this->session->data['facebook_state']);
 
 			$this->response->setOutput($this->load->view('account/reset', $data));
 		} else {

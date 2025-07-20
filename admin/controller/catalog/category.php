@@ -20,6 +20,19 @@ class ControllerCatalogCategory extends Controller {
 		$this->load->model('catalog/category');
 
 		if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validateForm()) {
+		    // Determine the deepest selected parent category
+            if (!empty($this->request->post['level4_id']) && $this->request->post['level4_id'] != '0') {
+                $this->request->post['parent_id'] = $this->request->post['level4_id'];
+            } elseif (!empty($this->request->post['level3_id']) && $this->request->post['level3_id'] != '0') {
+                $this->request->post['parent_id'] = $this->request->post['level3_id'];
+            } elseif (!empty($this->request->post['level2_id']) && $this->request->post['level2_id'] != '0') {
+                $this->request->post['parent_id'] = $this->request->post['level2_id'];
+            } elseif (!empty($this->request->post['parent_id']) && $this->request->post['parent_id'] != '0') {
+                // keep existing parent_id
+            } else {
+                $this->request->post['parent_id'] = 0; // top-level category
+            }
+            // level end 
 			$this->model_catalog_category->addCategory($this->request->post);
 
 			$this->session->data['success'] = $this->language->get('text_success');
@@ -52,6 +65,19 @@ class ControllerCatalogCategory extends Controller {
 		$this->load->model('catalog/category');
 
 		if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validateForm()) {
+		    	// Determine the deepest selected parent category
+            if (!empty($this->request->post['level4_id']) && $this->request->post['level4_id'] != '0') {
+                $this->request->post['parent_id'] = $this->request->post['level4_id'];
+            } elseif (!empty($this->request->post['level3_id']) && $this->request->post['level3_id'] != '0') {
+                $this->request->post['parent_id'] = $this->request->post['level3_id'];
+            } elseif (!empty($this->request->post['level2_id']) && $this->request->post['level2_id'] != '0') {
+                $this->request->post['parent_id'] = $this->request->post['level2_id'];
+            } elseif (!empty($this->request->post['parent_id']) && $this->request->post['parent_id'] != '0') {
+                // keep existing parent_id
+            } else {
+                $this->request->post['parent_id'] = 0; // top-level category
+            }
+            // level end 
 			$this->model_catalog_category->editCategory($this->request->get['category_id'], $this->request->post);
 
 			$this->session->data['success'] = $this->language->get('text_success');
@@ -355,6 +381,25 @@ class ControllerCatalogCategory extends Controller {
 		$this->load->model('localisation/language');
 
 		$data['languages'] = $this->model_localisation_language->getLanguages();
+		
+		
+        // 		level
+
+		$category_info = array(); // Initialize early
+        
+        $data['is_edit'] = isset($this->request->get['category_id']);
+        
+        if ($data['is_edit']) {
+            $category_id = $this->request->get['category_id'];
+            $category_info = $this->model_catalog_category->getCategory($category_id);
+        
+            $data['category_level'] = $category_info['level'] ?? 0;
+            $data['category_path'] = $this->model_catalog_category->getCategoryFullPath($category_id);
+        } else {
+            $data['category_path'] = [];
+            $data['category_level'] = 0;
+        }
+        // level end 
 
 		if (isset($this->request->post['category_description'])) {
 			$data['category_description'] = $this->request->post['category_description'];
@@ -449,6 +494,26 @@ class ControllerCatalogCategory extends Controller {
 
 		$data['placeholder'] = $this->model_tool_image->resize('no_image.png', 100, 100);
 
+       // Default banner path from POST or DB
+           // Category Banner: Fetch from POST or existing DB data
+        if (isset($this->request->post['category_banner'])) {
+            $data['category_banner'] = $this->request->post['category_banner'];
+        } elseif (!empty($category_info)) {
+            $data['category_banner'] = $category_info['category_banner'];
+        } else {
+            $data['category_banner'] = '';
+        }
+        
+        // Load thumbnail for banner
+        if (isset($this->request->post['category_banner']) && is_file(DIR_IMAGE . $this->request->post['category_banner'])) {
+            $data['banner_thumb'] = $this->model_tool_image->resize($this->request->post['category_banner'], 300, 100);
+        } elseif (!empty($category_info) && is_file(DIR_IMAGE . $category_info['category_banner'])) {
+            $data['banner_thumb'] = $this->model_tool_image->resize($category_info['category_banner'], 300, 100);
+        } else {
+            $data['banner_thumb'] = $this->model_tool_image->resize('no_image.png', 300, 100);
+        }
+
+            // banner end 
 		if (isset($this->request->post['top'])) {
 			$data['top'] = $this->request->post['top'];
 		} elseif (!empty($category_info)) {
@@ -512,6 +577,7 @@ class ControllerCatalogCategory extends Controller {
 		if (!$this->user->hasPermission('modify', 'catalog/category')) {
 			$this->error['warning'] = $this->language->get('error_permission');
 		}
+		
 
 		foreach ($this->request->post['category_description'] as $language_id => $value) {
 			if ((utf8_strlen($value['name']) < 1) || (utf8_strlen($value['name']) > 255)) {
@@ -521,6 +587,16 @@ class ControllerCatalogCategory extends Controller {
 			if ((utf8_strlen($value['meta_title']) < 1) || (utf8_strlen($value['meta_title']) > 255)) {
 				$this->error['meta_title'][$language_id] = $this->language->get('error_meta_title');
 			}
+			
+			$existing = $this->model_catalog_category->getCategoryByName($value['name']);
+
+			if ($existing) {
+				// If editing, skip checking against itself
+				if (!isset($this->request->get['category_id']) || ($this->request->get['category_id'] != $existing['category_id'])) {
+					$this->error['name'][$language_id] = 'Category name "' . $value['name'] . '" already exists.';
+				}
+			}
+			
 		}
 
 		if (isset($this->request->get['category_id']) && $this->request->post['parent_id']) {
@@ -617,4 +693,23 @@ class ControllerCatalogCategory extends Controller {
 		$this->response->addHeader('Content-Type: application/json');
 		$this->response->setOutput(json_encode($json));
 	}
+	
+public function getSubCategories1() {
+    $this->load->model('catalog/category');
+    
+    $json = [];
+    $parent_id = isset($this->request->get['parent_id']) ? (int)$this->request->get['parent_id'] : 0;
+    
+    $results = $this->model_catalog_category->getSubCategories1($parent_id);
+
+    foreach ($results as $result) {
+        $json[] = [
+            'category_id' => $result['category_id'],
+            'name'        => $result['name']
+        ];
+    }
+
+    $this->response->addHeader('Content-Type: application/json');
+    $this->response->setOutput(json_encode($json));
+}
 }

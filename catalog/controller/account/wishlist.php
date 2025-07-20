@@ -60,7 +60,7 @@ class ControllerAccountWishList extends Controller {
 
 			if ($product_info) {
 				if ($product_info['image']) {
-					$image = $this->model_tool_image->resize($product_info['image'], $this->config->get('theme_' . $this->config->get('config_theme') . '_image_wishlist_width'), $this->config->get('theme_' . $this->config->get('config_theme') . '_image_wishlist_height'));
+					$image = $this->model_tool_image->resize($product_info['image'],200,150 );
 				} else {
 					$image = false;
 				}
@@ -109,6 +109,7 @@ class ControllerAccountWishList extends Controller {
 		$data['content_bottom'] = $this->load->controller('common/content_bottom');
 		$data['footer'] = $this->load->controller('common/footer');
 		$data['header'] = $this->load->controller('common/header');
+		$data['column_left_account'] = $this->load->controller('account/column_left_account');
 
 		$this->response->setOutput($this->load->view('account/wishlist', $data));
 	}

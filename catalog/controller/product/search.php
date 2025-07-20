@@ -72,6 +72,19 @@ class ControllerProductSearch extends Controller {
 		} else {
 			$this->document->setTitle($this->language->get('heading_title'));
 		}
+		
+// 		add for search page conanical tags 
+		
+		if (isset($this->request->get['search'])) {
+			$canonical_url = $this->url->link('product/search', 'search=' . urlencode($this->request->get['search']), true);
+			$this->document->addLink($canonical_url, 'canonical');
+		} else {
+			$canonical_url = $this->url->link('product/search', '', true);
+			$this->document->addLink($canonical_url, 'canonical');
+		}
+
+// end here 
+
 
 		$data['breadcrumbs'] = array();
 
@@ -174,22 +187,83 @@ class ControllerProductSearch extends Controller {
 		$data['products'] = array();
 
 		if (isset($this->request->get['search']) || isset($this->request->get['tag'])) {
+// 			$filter_data = array(
+// 				'filter_name'         => $search,
+// 				'filter_tag'          => $tag,
+// 				'filter_description'  => $description,
+// 				'filter_category_id'  => $category_id,
+// 				'filter_sub_category' => $sub_category,
+// 				'sort'                => $sort,
+// 				'order'               => $order,
+// 				'start'               => ($page - 1) * $limit,
+// 				'limit'               => $limit
+// 			);
+
+			$manufacturer_ids = isset($this->request->get['manufacturer']) ? $this->request->get['manufacturer'] : [];
+			if (!is_array($manufacturer_ids)) {
+				$manufacturer_ids = [$manufacturer_ids];
+			}
+			// ✅ Get selected colors from request
+			$filter_colors = isset($this->request->get['color']) ? $this->request->get['color'] : [];
+
+			$filter_discounts = isset($this->request->get['discount']) ? $this->request->get['discount'] : [];
+			$filter_data['filter_discounts'] = $filter_discounts;
+			$data['selected_discounts'] = $filter_discounts;
+
+		
+			$category_id = isset($this->request->get['category_id']) ?
+				(int)$this->request->get['category_id'] :
+				0;
+			$data['category_id'] = $category_id;
+
+
+			// Get selected size filters from URL
+			$filter_sizes = isset($this->request->get['size']) ? (array)$this->request->get['size'] : [];
+			$data['selected_sizes'] = $filter_sizes;
+
+			// Load model
+			$this->load->model('catalog/product');
+			$data['sizes'] = $this->model_catalog_product->getAvailableSizes($category_id);
+
+
+			$min_price = isset($this->request->get['min']) ? (float)$this->request->get['min'] : 0;
+			$max_price = isset($this->request->get['max']) ? (float)$this->request->get['max'] : 999999;
+
+
 			$filter_data = array(
-				'filter_name'         => $search,
-				'filter_tag'          => $tag,
-				'filter_description'  => $description,
-				'filter_category_id'  => $category_id,
-				'filter_sub_category' => $sub_category,
-				'sort'                => $sort,
-				'order'               => $order,
-				'start'               => ($page - 1) * $limit,
-				'limit'               => $limit
+
+				'filter_name'           => $search,
+				'filter_tag'            => $tag,
+				'filter_description'    => $description,
+				'filter_category_id'    => $category_id,
+				'filter_sub_category'   => $sub_category,
+				'filter_manufacturers'  => $manufacturer_ids,
+				'filter_colors'         => $filter_colors,
+				'filter_sizes'          => $filter_sizes,
+				'filter_discounts'      => $filter_discounts, 
+				'filter_ratings'        => isset($this->request->get['rating']) ? $this->request->get['rating'] : [],
+				'filter_capacities'     => $filter_data['filter_capacities'] ?? '',
+				'filter_option_values'  => isset($this->request->get['filter_option_values']) ? $this->request->get['filter_option_values'] : [],
+				'min_price'             => $min_price,
+				'max_price'             => $max_price,
+				'sort'                  => $sort,
+				'order'                 => $order,
+				'start'                 => ($page - 1) * $limit,
+				'limit'                 => $limit
 			);
+
+			$data['selected_rating'] = isset($filter_data['filter_rating']) ? $filter_data['filter_rating'] : [];
+			$data['selected_sizes'] = $filter_data['filter_sizes'];
+			$data['selected_sizes'] = $filter_sizes;
+
+			$data['selected_colors'] = $filter_colors;
 
 			$product_total = $this->model_catalog_product->getTotalProducts($filter_data);
 
 			$results = $this->model_catalog_product->getProducts($filter_data);
-
+			
+			$index = 0;
+		$brands = [];
 			foreach ($results as $result) {
 				if ($result['image']) {
 					$image = $this->model_tool_image->resize($result['image'], $this->config->get('theme_' . $this->config->get('config_theme') . '_image_product_width'), $this->config->get('theme_' . $this->config->get('config_theme') . '_image_product_height'));
@@ -220,7 +294,19 @@ class ControllerProductSearch extends Controller {
 				} else {
 					$rating = false;
 				}
-
+				// filter 
+            	if ($index == 0) {
+					$product_id0 = $result['product_id'];
+					$index++;
+				}
+				$search_product_ids[] = $result['product_id']; 
+				if ($result['manufacturer']) {
+					$brands[] = [
+						'manufacturer_id' => $result['manufacturer_id'],
+						'name' => $result['manufacturer']
+					];
+				}
+				// filter end 
 				$data['products'][] = array(
 					'product_id'  => $result['product_id'],
 					'thumb'       => $image,
@@ -397,6 +483,48 @@ class ControllerProductSearch extends Controller {
 				$url .= '&limit=' . $this->request->get['limit'];
 			}
 
+        // pagination 
+        
+        
+        
+        			if (isset($this->request->get['manufacturer'])) {
+            foreach ((array)$this->request->get['manufacturer'] as $m) {
+                $url .= '&manufacturer[]=' . (int)$m;
+            }
+        }
+        
+        if (isset($this->request->get['color'])) {
+            foreach ((array)$this->request->get['color'] as $c) {
+                $url .= '&color[]=' . urlencode($c);
+            }
+        }
+        
+        if (isset($this->request->get['discount'])) {
+            foreach ((array)$this->request->get['discount'] as $d) {
+                $url .= '&discount[]=' . (int)$d;
+            }
+        }
+        
+        if (isset($this->request->get['rating'])) {
+            foreach ((array)$this->request->get['rating'] as $r) {
+                $url .= '&rating[]=' . (int)$r;
+            }
+        }
+        
+        if (isset($this->request->get['size'])) {
+            foreach ((array)$this->request->get['size'] as $s) {
+                $url .= '&size[]=' . (int)$s;
+            }
+        }
+        
+        if (isset($this->request->get['min'])) {
+            $url .= '&min=' . (float)$this->request->get['min'];
+        }
+        
+        if (isset($this->request->get['max'])) {
+            $url .= '&max=' . (float)$this->request->get['max'];
+        }
+        // end 
 			$pagination = new Pagination();
 			$pagination->total = $product_total;
 			$pagination->page = $page;
@@ -451,6 +579,14 @@ class ControllerProductSearch extends Controller {
 		$data['content_bottom'] = $this->load->controller('common/content_bottom');
 		$data['footer'] = $this->load->controller('common/footer');
 		$data['header'] = $this->load->controller('common/header');
+
+
+            
+		$data['pricefilter'] = $this->load->controller('product/filtercombo', [
+			'product_ida0' => $product_id0,
+			'brands' => $brands,
+            'product_ids'       => $search_product_ids,
+		]);
 
 		$this->response->setOutput($this->load->view('product/search', $data));
 	}

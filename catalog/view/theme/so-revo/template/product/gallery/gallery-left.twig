@@ -1,0 +1,71 @@
+<style>
+    .large-image img {
+  image-rendering: auto;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.zoomWindowContainer div {
+     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.4);
+}
+</style>
+<div id="thumb-slider" class="thumb-vertical-outer">
+	<ul class="thumb-vertical">
+		{% for key,image in images %}
+		<li class="image-additional">
+			<a data-index="{{key}}" class="img thumbnail" data-image="{{image.popup}}" title="{{ heading_title }}">
+				<img src="{{ image.thumb }}" title="{{ heading_title }}" alt="{{ heading_title }}" />
+			</a>
+		</li>
+		{% endfor %}
+		
+	</ul>
+
+</div>
+{#==== Gallery - Large image  ==== #}
+<div class="large-image  {{class_honizol}}">
+	<img itemprop="image" class="product-image-zoom" src="{{popup}}" data-zoom-image="{{popup}}" title="{{ heading_title }}" alt="{{ heading_title }}" />
+	
+</div>
+
+
+
+<script type="text/javascript"><!--
+	$(document).ready(function() {
+		var zoomCollection = '.large-image img';
+		$( zoomCollection ).elevateZoom({
+			//value zoomType (window,inner,lens)
+			{% if soconfig.get_settings('product_enablezoom')%}
+			zoomType        : "window",
+			{% else %}
+			zoomType        :"none",
+			{% endif %}
+			lensSize    :'600',
+			zoomWindowWidth     : 600,
+            zoomWindowHeight    : 550,
+			gallery:'thumb-slider',
+			cursor: 'pointer',
+			galleryActiveClass: "active",
+			  borderSize: 0,
+			 //  zoomLevel: .5,
+            scrollZoom:false,
+            zoomWindowOffsetX: 10
+		});
+	
+		
+		
+// 		setTimeout(function () {
+//     const $zoomWindow = $('.zoomWindowContainer');
+
+//     if ($zoomWindow.length) {
+//       $zoomWindow.css({
+//         position: 'fixed',
+//         top: '0px',        // adjust as needed
+//         right: '0px',      // or left: '100px'
+//         zIndex: 9999,
+//       });
+//     }
+//   }, 500);
+		
+	});
+	
+//--></script>

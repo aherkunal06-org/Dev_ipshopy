@@ -51,13 +51,23 @@ class ControllerAccountReturn extends Controller {
 		$results = $this->model_account_return->getReturns(($page - 1) * 10, 10);
 
 		foreach ($results as $result) {
+			$image = $this->getProductImage($result['model']);
+
+	
 			$data['returns'][] = array(
-				'return_id'  => $result['return_id'],
-				'order_id'   => $result['order_id'],
-				'name'       => $result['firstname'] . ' ' . $result['lastname'],
-				'status'     => $result['status'],
-				'date_added' => date($this->language->get('date_format_short'), strtotime($result['date_added'])),
-				'href'       => $this->url->link('account/return/info', 'return_id=' . $result['return_id'] . $url, true)
+				'return_id'    => $result['return_id'],
+				'order_id'     => $result['order_id'],
+				'name'         => $result['firstname'] . ' ' . $result['lastname'],
+			
+				'status'       => $result['status'],
+				'date_added'   => date($this->language->get('date_format_short'), strtotime($result['date_added'])),
+				'href'         => $this->url->link('account/return/info', 'return_id=' . $result['return_id'], true),
+				'return_image_href' => $this->url->link('account/return_image', 'return_id=' . $result['return_id'], true),
+			       // coommented on 20-05-2025
+				'track_link'   => '#',
+					'product_name' => $result['product'],
+				'sku'          => $result['model'],
+				'image'        => $image
 			);
 		}
 
@@ -80,6 +90,7 @@ class ControllerAccountReturn extends Controller {
 		$data['footer'] = $this->load->controller('common/footer');
 		$data['header'] = $this->load->controller('common/header');
 
+    // 	$data['column_left_account'] = $this->load->controller('account/column_left_account'); commentes on 20-05-2025
 		$this->response->setOutput($this->load->view('account/return_list', $data));
 	}
 
@@ -101,6 +112,45 @@ class ControllerAccountReturn extends Controller {
 		$this->load->model('account/return');
 
 		$return_info = $this->model_account_return->getReturn($return_id);
+		
+		//-------------- added changes for product return 20-05-2025 -----------------------
+		
+		if (isset($this->request->get['return_id'])) {
+			$return_id = (int)$this->request->get['return_id'];
+		} else {
+			$return_id = 0;
+		}
+	
+		$return_info = $this->model_account_return->getReturn($return_id);
+	
+		if ($return_info) {
+			$data['return_id'] = $return_id;
+			$data['product'] = $return_info['product'];
+			$data['model'] = $return_info['model'];
+			$data['return_reason'] = $return_info['return_reason'];
+			$data['comment'] = $return_info['comment'];
+			$data['date_added'] = $return_info['date_added'];
+	
+			// Fetch return images
+			$return_images = $this->model_account_return->getReturnImages($return_id);
+			$data['return_images'] = [];
+	
+			$this->load->model('tool/image');
+	
+			foreach ($return_images as $image) {
+				$data['return_images'][] = [
+					'thumb' => $this->model_tool_image->resize($image['image'], 200, 200), // Resize for display
+					'full'  => HTTPS_SERVER . 'image/' . $image['image'] // Full-size image
+				];
+			}
+	
+			$this->response->setOutput($this->load->view('account/return_info', $data));
+		} else {
+			$this->response->redirect($this->url->link('account/return', '', true));
+		}
+
+
+        //--------------------------------------------------------------------------------------- 		
 
 		if ($return_info) {
 			$this->document->setTitle($this->language->get('text_return'));
@@ -160,6 +210,8 @@ class ControllerAccountReturn extends Controller {
 					'comment'    => nl2br($result['comment'])
 				);
 			}
+			
+			$data['cancel'] = $this->url->link('account/return');
 
 			$data['continue'] = $this->url->link('account/return', $url, true);
 
@@ -169,8 +221,10 @@ class ControllerAccountReturn extends Controller {
 			$data['content_bottom'] = $this->load->controller('common/content_bottom');
 			$data['footer'] = $this->load->controller('common/footer');
 			$data['header'] = $this->load->controller('common/header');
-
+			$data['column_left_account'] = $this->load->controller('account/column_left_account'); //commented on 20-05-2025 for product return
+			
 			$this->response->setOutput($this->load->view('account/return_info', $data));
+			
 		} else {
 			$this->document->setTitle($this->language->get('text_return'));
 
@@ -211,20 +265,69 @@ class ControllerAccountReturn extends Controller {
 			$data['footer'] = $this->load->controller('common/footer');
 			$data['header'] = $this->load->controller('common/header');
 
+        	$data['column_left_account'] = $this->load->controller('account/column_left_account'); // commented on 20-05-2025
 			$this->response->setOutput($this->load->view('error/not_found', $data));
 		}
 	}
 
 	public function add() {
 		$this->load->language('account/return');
+		$this->load->model('vendor/order_report');
 
 		$this->load->model('account/return');
 
 		if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validate()) {
-			$this->model_account_return->addReturn($this->request->post);
+			
+            //    _____ added changes for product return on 20-05-2025 __________________________________________________________________
+            $data = $this->request->post;
+            var_dump("testing the code ------->",$data);
+    		
+            // Initialize an array for images
+            $data['return_images'] = [];
+    
+            // Handle Multiple Image Uploads (from 4 different input fields)
+            for ($i = 1; $i <= 4; $i++) {
+                $input_name = 'return_image_' . $i;
+    
+                if (isset($this->request->files[$input_name]) && is_uploaded_file($this->request->files[$input_name]['tmp_name'])) {
+                    $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif'];
+                    $filename = basename($this->request->files[$input_name]['name']);
+                    $file_ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+    
+                    if (in_array($file_ext, $allowed_extensions)) {
+                        $new_filename = 'return_' . uniqid() . '.' . $file_ext;
+                        $file_path = 'catalog/return_images/' . $new_filename;
+    
+                        if (!is_dir(DIR_IMAGE . 'catalog/return_images')) {
+                            mkdir(DIR_IMAGE . 'catalog/return_images', 0777, true);
+                        }
+    
+                        if (move_uploaded_file($this->request->files[$input_name]['tmp_name'], DIR_IMAGE . $file_path)) {
+                            $data['return_images'][] = $file_path;
+                        }
+                    }
+                }
+            }
+    		// ////////////new add
+    			$order_status=12;
+            // Insert Return Data and Get ID
+            $return_id = $this->model_account_return->addReturn($data);
+    		$this->model_vendor_order_report->changeOrderStatus($data['order_id'],$order_status);
+    
+            // Insert Images into Database
+            if (!empty($data['return_images'])) {
+                foreach ($data['return_images'] as $image) {
+                    $this->model_account_return->addReturnImage($return_id, $image);
+                }
+            }
+    		
+            //-------------------------------------------------------------------------------------------
 
 			$this->response->redirect($this->url->link('account/return/success', '', true));
 		}
+
+		$this->getForm();
+		
 
 		$this->document->setTitle($this->language->get('heading_title'));
 		$this->document->addScript('catalog/view/javascript/jquery/datetimepicker/moment/moment.min.js');
@@ -324,6 +427,16 @@ class ControllerAccountReturn extends Controller {
 		} else {
 			$data['order_id'] = '';
 		}
+		
+		// added code for the product return on 21-05-2025
+		if (isset($this->request->post['product_id'])) {
+			$data['product_id'] = $this->request->post['product_id'];
+		} elseif (!empty($product_info)) {
+			$data['product_id'] = $product_info['product_id'];
+		} else {
+			$data['product_id'] = 0;
+		}
+        //-----------------------------------------------------
 
 		if (isset($this->request->post['date_ordered'])) {
 			$data['date_ordered'] = $this->request->post['date_ordered'];
@@ -445,6 +558,7 @@ class ControllerAccountReturn extends Controller {
 		$data['footer'] = $this->load->controller('common/footer');
 		$data['header'] = $this->load->controller('common/header');
 
+	$data['column_left_account'] = $this->load->controller('account/column_left_account');
 		$this->response->setOutput($this->load->view('account/return_form', $data));
 	}
 
@@ -488,6 +602,11 @@ class ControllerAccountReturn extends Controller {
 				$this->error['captcha'] = $captcha;
 			}
 		}
+		if (empty($this->request->files['return_image_1']['name']) && empty($this->request->files['return_image_2']['name']) && 
+		empty($this->request->files['return_image_3']['name']) && 
+        empty($this->request->files['return_image_4']['name'])) {
+        $this->error['warning'] = $this->language->get('error_image_required');
+        }
 
 		if ($this->config->get('config_return_id')) {
 			$this->load->model('catalog/information');
@@ -528,6 +647,33 @@ class ControllerAccountReturn extends Controller {
 		$data['footer'] = $this->load->controller('common/footer');
 		$data['header'] = $this->load->controller('common/header');
 
+	$data['column_left_account'] = $this->load->controller('account/column_left_account');
 		$this->response->setOutput($this->load->view('common/success', $data));
 	}
+		
+	private function getProductImage($model) {
+        $this->load->model('catalog/product');
+        $this->load->model('tool/image');
+    
+        $product = $this->model_catalog_product->getProductByModel($model);
+        
+        if ($product && !empty($product['image']) && is_file(DIR_IMAGE . $product['image'])) {
+            return $this->model_tool_image->resize($product['image'], 60, 60);
+        } else {
+            return $this->model_tool_image->resize('placeholder.png', 60, 60);
+        }
+    }
+    
+    //---- added changes of the product return on 20-05-2025 ----------------
+    protected function getForm() {
+        // View data preparation
+        $data['action'] = $this->url->link('account/return/add', '', true);
+        $data['return_image'] = '';
+
+        $data['header'] = $this->load->controller('common/header');
+        $data['footer'] = $this->load->controller('common/footer');
+
+        $this->response->setOutput($this->load->view('account/return_form', $data));
+    }
+    // -------------------------------------------------------------------------
 }

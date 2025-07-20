@@ -46,6 +46,38 @@ class ControllerAccountAddress extends Controller {
 
 		$this->getForm();
 	}
+public function newAddressadd(){
+    $this->load->model('account/address');
+
+// 		if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validateForm()) {
+// 			$this->model_account_address->addAddress($this->customer->getId(), $this->request->post);
+			
+// 			$this->session->data['success'] = $this->language->get('text_add');
+
+// 			$this->response->redirect($this->url->link('account/address', '', true));
+// 		}
+// 		return 'false';
+   $this->load->language('account/address'); // If you want error/success messages
+
+    $json = [];
+
+    $this->load->model('account/address');
+
+    if ($this->request->server['REQUEST_METHOD'] == 'POST') {
+        if ($this->validateForm()) {
+            $this->model_account_address->addAddress($this->customer->getId(), $this->request->post);
+            
+            $json['success'] = $this->language->get('text_add'); // Or just a string
+        } else {
+            $json['error'] = $this->error; // Contains field-wise errors from validateForm()
+        }
+    } else {
+        $json['error'] = 'Invalid request method';
+    }
+
+    $this->response->addHeader('Content-Type: application/json');
+    $this->response->setOutput(json_encode($json));
+}
 
 	public function edit() {
 		if (!$this->customer->isLogged()) {
@@ -88,6 +120,7 @@ class ControllerAccountAddress extends Controller {
 
 			$this->response->redirect($this->url->link('account/address', '', true));
 		}
+		
 
 		$this->getForm();
 	}
@@ -214,6 +247,7 @@ class ControllerAccountAddress extends Controller {
 		$data['content_bottom'] = $this->load->controller('common/content_bottom');
 		$data['footer'] = $this->load->controller('common/footer');
 		$data['header'] = $this->load->controller('common/header');
+		$data['column_left_account'] = $this->load->controller('account/column_left_account');
 
 		$this->response->setOutput($this->load->view('account/address_list', $data));
 	}
@@ -299,6 +333,8 @@ class ControllerAccountAddress extends Controller {
 		}
 		
 		if (!isset($this->request->get['address_id'])) {
+		    
+			
 			$data['action'] = $this->url->link('account/address/add', '', true);
 		} else {
 			$data['action'] = $this->url->link('account/address/edit', 'address_id=' . $this->request->get['address_id'], true);
@@ -390,13 +426,13 @@ class ControllerAccountAddress extends Controller {
 		$this->load->model('account/custom_field');
 
 		$custom_fields = $this->model_account_custom_field->getCustomFields($this->config->get('config_customer_group_id'));
-
 		foreach ($custom_fields as $custom_field) {
 			if ($custom_field['location'] == 'address') {
 				$data['custom_fields'][] = $custom_field;
 			}
 		}
-		
+// 	var_dump($data['custom_fields'],'--------------custom fields ');
+	
 		if (isset($this->request->post['custom_field']['address'])) {
 			$data['address_custom_field'] = $this->request->post['custom_field']['address'];
 		} elseif (isset($address_info)) {
@@ -421,10 +457,13 @@ class ControllerAccountAddress extends Controller {
 		$data['content_bottom'] = $this->load->controller('common/content_bottom');
 		$data['footer'] = $this->load->controller('common/footer');
 		$data['header'] = $this->load->controller('common/header');
+$data['column_left_account'] = $this->load->controller('account/column_left_account');
+$data['newaction'] = $this->url->link('account/address/newAddressadd', '', true);
 
 		$this->response->setOutput($this->load->view('account/address_form', $data));
 	}
 
+	
 	protected function validateForm() {
 		if ((utf8_strlen(trim($this->request->post['firstname'])) < 1) || (utf8_strlen(trim($this->request->post['firstname'])) > 32)) {
 			$this->error['firstname'] = $this->language->get('error_firstname');
@@ -463,15 +502,15 @@ class ControllerAccountAddress extends Controller {
 
 		$custom_fields = $this->model_account_custom_field->getCustomFields($this->config->get('config_customer_group_id'));
 
-		foreach ($custom_fields as $custom_field) {
-			if ($custom_field['location'] == 'address') {
-				if ($custom_field['required'] && empty($this->request->post['custom_field'][$custom_field['location']][$custom_field['custom_field_id']])) {
-					$this->error['custom_field'][$custom_field['custom_field_id']] = sprintf($this->language->get('error_custom_field'), $custom_field['name']);
-				} elseif (($custom_field['type'] == 'text') && !empty($custom_field['validation']) && !filter_var($this->request->post['custom_field'][$custom_field['location']][$custom_field['custom_field_id']], FILTER_VALIDATE_REGEXP, array('options' => array('regexp' => $custom_field['validation'])))) {
-					$this->error['custom_field'][$custom_field['custom_field_id']] = sprintf($this->language->get('error_custom_field'), $custom_field['name']);
-				}
-			}
-		}
+// 		foreach ($custom_fields as $custom_field) {
+// 			if ($custom_field['location'] == 'address') {
+// 				if ($custom_field['required'] && empty($this->request->post['custom_field'][$custom_field['location']][$custom_field['custom_field_id']])) {
+// 					$this->error['custom_field'][$custom_field['custom_field_id']] = sprintf($this->language->get('error_custom_field'), $custom_field['name']);
+// 				} elseif (($custom_field['type'] == 'text') && !empty($custom_field['validation']) && !filter_var($this->request->post['custom_field'][$custom_field['location']][$custom_field['custom_field_id']], FILTER_VALIDATE_REGEXP, array('options' => array('regexp' => $custom_field['validation'])))) {
+// 					$this->error['custom_field'][$custom_field['custom_field_id']] = sprintf($this->language->get('error_custom_field'), $custom_field['name']);
+// 				}
+// 			}
+// 		}
 
 		return !$this->error;
 	}

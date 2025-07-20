@@ -166,19 +166,121 @@ class Cart {
 				$price = $product_query->row['price'];
 
 				// Product Discounts
-				$discount_quantity = 0;
+				// $discount_quantity = 0;
 
-				foreach ($cart_query->rows as $cart_2) {
-					if ($cart_2['product_id'] == $cart['product_id']) {
-						$discount_quantity += $cart_2['quantity'];
+				// foreach ($cart_query->rows as $cart_2) {
+				// 	if ($cart_2['product_id'] == $cart['product_id']) {
+				// 		$discount_quantity += $cart_2['quantity'];
+				// 	}
+				// }
+
+				// $product_discount_query = $this->db->query("SELECT price FROM " . DB_PREFIX . "product_discount WHERE product_id = '" . (int)$cart['product_id'] . "' AND customer_group_id = '" . (int)$this->config->get('config_customer_group_id') . "' AND quantity <= '" . (int)$discount_quantity . "' AND ((date_start = '0000-00-00' OR date_start < NOW()) AND (date_end = '0000-00-00' OR date_end > NOW())) ORDER BY quantity DESC, priority ASC, price ASC LIMIT 1");
+
+				// if ($product_discount_query->num_rows) {
+				// 	$price = $product_discount_query->row['price'];
+				// }
+				
+				// code added for range discount on 29-04-2025
+				$product_data = array();
+				
+				foreach ($cart_query->rows as &$cart) {
+					$discount_quantity = 0;
+
+					foreach ($cart_query->rows as $cart_2) {
+						if ($cart_2['product_id'] == $cart['product_id']) {
+							$discount_quantity += $cart_2['quantity'];
+						}
 					}
-				}
 
-				$product_discount_query = $this->db->query("SELECT price FROM " . DB_PREFIX . "product_discount WHERE product_id = '" . (int)$cart['product_id'] . "' AND customer_group_id = '" . (int)$this->config->get('config_customer_group_id') . "' AND quantity <= '" . (int)$discount_quantity . "' AND ((date_start = '0000-00-00' OR date_start < NOW()) AND (date_end = '0000-00-00' OR date_end > NOW())) ORDER BY quantity DESC, priority ASC, price ASC LIMIT 1");
+					$product_discount_query = $this->db->query("SELECT 
+					p.product_id, 
+					p.model, 
+					p.image, 
+					p.shipping, 
+					p.price AS base_price,
+					p.tax_class_id,
+					p.weight, 
+					p.weight_class_id,
+					p.length, 
+					p.width, 
+					p.height, 
+					p.length_class_id,
+					pd.name,
+					CASE 
+						WHEN pdsc.price IS NOT NULL THEN pdsc.price
+						WHEN ps.price IS NOT NULL THEN ps.price
+						ELSE p.price
+					END AS final_price
+				FROM " . DB_PREFIX . "product p
+				LEFT JOIN " . DB_PREFIX . "product_description pd ON (p.product_id = pd.product_id AND pd.language_id = '" . (int)$this->config->get('config_language_id') . "')
+				LEFT JOIN " . DB_PREFIX . "product_discount pdsc ON (p.product_id = pdsc.product_id 
+					AND pdsc.customer_group_id = '" . (int)$this->config->get('config_customer_group_id') . "' 
+					AND ((pdsc.quantity <= '" . (int)$discount_quantity . "' 
+					AND (pdsc.max_quantity = 0 OR pdsc.max_quantity >= '" . (int)$discount_quantity . "')) 
+					OR (pdsc.max_quantity > 0 
+					AND pdsc.quantity <= '" . (int)$discount_quantity . "' 
+					AND pdsc.max_quantity = (
+						SELECT MAX(max_quantity) 
+						FROM " . DB_PREFIX . "product_discount 
+						WHERE product_id = '" . (int)$cart['product_id'] . "' 
+						AND customer_group_id = '" . (int)$this->config->get('config_customer_group_id') . "')))
+					AND ((pdsc.date_start <= NOW() OR pdsc.date_start = '0000-00-00') 
+					AND (pdsc.date_end >= NOW() OR pdsc.date_end = '0000-00-00')))
+				LEFT JOIN " . DB_PREFIX . "product_special ps ON (p.product_id = ps.product_id 
+					AND ps.customer_group_id = '" . (int)$this->config->get('config_customer_group_id') . "' 
+					AND ((ps.date_start <= NOW() OR ps.date_start = '0000-00-00') 
+					AND (ps.date_end >= NOW() OR ps.date_end = '0000-00-00')))
+				WHERE p.product_id = '" . (int)$cart['product_id'] . "'
+				ORDER BY pdsc.quantity DESC, pdsc.max_quantity DESC, pdsc.priority ASC, pdsc.price ASC, ps.priority ASC, ps.price ASC
+				LIMIT 1");
 
-				if ($product_discount_query->num_rows) {
-					$price = $product_discount_query->row['price'];
+
+					if ($product_discount_query->num_rows) {
+						$product_info = $product_discount_query->row;
+
+						$cart['name'] = $product_info['name'];
+						$cart['model'] = $product_info['model'];
+						$cart['subtract'] = 1; // default, unless you are handling subtract stock differently
+						$cart['reward'] = 0; // default
+						$cart['shipping'] = $product_info['shipping'];
+						$cart['image'] = $product_info['image'];
+						$cart['tax_class_id'] = $product_info['tax_class_id'];
+						$cart['weight'] = $product_info['weight'];
+						$cart['weight_class_id'] = $product_info['weight_class_id'];
+						$cart['length'] = $product_info['length'];
+						$cart['width'] = $product_info['width'];
+						$cart['height'] = $product_info['height'];
+						$cart['length_class_id'] = $product_info['length_class_id'];
+						$cart['price'] = (float)$product_info['final_price'];
+						$cart['total'] = $cart['price'] * $cart['quantity'];
+					}
+
+					$product_data[] = array(
+						'cart_id'          => $cart['cart_id'],
+						'product_id'       => $cart['product_id'],
+						'name'             => $cart['name'],
+						'model'            => $cart['model'],
+						'option'           => array(), // Options if any
+						'recurring'        => 0,
+						'quantity'         => $cart['quantity'],
+						'subtract'         => $cart['subtract'],
+						'price'            => $cart['price'], // ✅ Updated price here
+						'total'            => $cart['total'], // ✅ Updated total here
+						'reward'           => $cart['reward'],
+						'stock'            => true,
+						'shipping'         => $cart['shipping'],
+						'image'            => $cart['image'],
+						'tax_class_id'     => $cart['tax_class_id'],
+						'weight'           => $cart['weight'],
+						'weight_class_id'  => $cart['weight_class_id'],
+						'length'           => $cart['length'],
+						'width'            => $cart['width'],
+						'height'           => $cart['height'],
+						'length_class_id'  => $cart['length_class_id']
+					);
 				}
+				return $product_data;
+				
 
 				// Product Specials
 				$product_special_query = $this->db->query("SELECT price FROM " . DB_PREFIX . "product_special WHERE product_id = '" . (int)$cart['product_id'] . "' AND customer_group_id = '" . (int)$this->config->get('config_customer_group_id') . "' AND ((date_start = '0000-00-00' OR date_start < NOW()) AND (date_end = '0000-00-00' OR date_end > NOW())) ORDER BY priority ASC, price ASC LIMIT 1");

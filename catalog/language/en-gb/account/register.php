@@ -1,12 +1,11 @@
 <?php
 // Heading
-$_['heading_title']        = 'Register Account';
-
+$_['heading_title']        = 'Create Account';
 // Text
 $_['text_account']         = 'Account';
 $_['text_register']        = 'Register';
-$_['text_account_already'] = 'If you already have an account with us, please login at the <a href="%s">login page</a>.';
-$_['text_your_details']    = 'Your Personal Details';
+$_['text_account_already'] = 'Already have an account? <a href="%s"> Login</a>.';
+$_['text_your_details']    = 'Enter your details below';
 $_['text_newsletter']      = 'Newsletter';
 $_['text_your_password']   = 'Your Password';
 $_['text_agree']           = 'I have read and agree to the <a href="%s" class="agree"><b>%s</b></a>';

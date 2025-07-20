@@ -3,11 +3,13 @@ class ControllerMailRegister extends Controller {
 	public function index(&$route, &$args, &$output) {
 		$this->load->language('mail/register');
 
-		$data['text_welcome'] = sprintf($this->language->get('text_welcome'), html_entity_decode($this->config->get('config_name'), ENT_QUOTES, 'UTF-8'));
+		$data['text_welcome'] = sprintf($this->language->get('text_welcome'));
+		$data['text_greetings'] = sprintf($this->language->get('text_greetings'), html_entity_decode($this->config->get('config_name'), ENT_QUOTES, 'UTF-8'));
 		$data['text_login'] = $this->language->get('text_login');
 		$data['text_approval'] = $this->language->get('text_approval');
 		$data['text_service'] = $this->language->get('text_service');
 		$data['text_thanks'] = $this->language->get('text_thanks');
+		$data['firstname'] = $args[0]['firstname'];
 
 		$this->load->model('account/customer_group');
 			
@@ -39,8 +41,12 @@ class ControllerMailRegister extends Controller {
 		$mail->setTo($args[0]['email']);
 		$mail->setFrom($this->config->get('config_email'));
 		$mail->setSender(html_entity_decode($this->config->get('config_name'), ENT_QUOTES, 'UTF-8'));
-		$mail->setSubject(sprintf($this->language->get('text_subject'), html_entity_decode($this->config->get('config_name'), ENT_QUOTES, 'UTF-8')));
-		$mail->setText($this->load->view('mail/register', $data));
+		$mail->setSubject(sprintf(
+			$this->language->get('text_subject'),
+			html_entity_decode($this->config->get('config_name'), ENT_QUOTES, 'UTF-8'),
+			$data['firstname']
+		));
+		$mail->setHtml($this->load->view('mail/register', $data));
 		$mail->send(); 
 	}
 	

@@ -13,12 +13,12 @@ $_['text_discount']            = ' or more ';
 $_['text_option']              = 'Available Options';
 $_['text_minimum']             = 'This product has a minimum quantity of %s';
 $_['text_reviews']             = '%s reviews';
-$_['text_write']               = 'Write a review';
+$_['text_write']               = 'Add review';
 $_['text_login']               = 'Please <a href="%s">login</a> or <a href="%s">register</a> to review';
 $_['text_no_reviews']          = 'There are no reviews for this product.';
 $_['text_note']                = '<span class="text-danger">Note:</span> HTML is not translated!';
 $_['text_success']             = 'Thank you for your review. It has been submitted to the webmaster for approval.';
-$_['text_related']             = 'Related Products';
+$_['text_related']             = 'Similar Products';
 $_['text_tags']                = 'Tags:';
 $_['text_error']               = 'Product not found!';
 $_['text_payment_recurring']   = 'Payment Profile';
@@ -46,5 +46,16 @@ $_['tab_review']               = 'Reviews (%s)';
 
 // Error
 $_['error_name']               = 'Warning: Review Name must be between 3 and 25 characters!';
-$_['error_text']               = 'Warning: Review Text must be between 25 and 1000 characters!';
+$_['error_text']               = 'Warning: Review Text must be between 4 and 1000 characters!';
 $_['error_rating']             = 'Warning: Please select a review rating!';
+$_['error_images']             = "Please upload at least 2 images.";
+
+
+$_['button_submit_review'] = 'Submit Review';
+$_['text_success_review'] = 'Saved successfully';
+$_['text_success'] = 'Your review has been submitted successfully.';
+
+// faq starts
+$_['text_login2'] = 'You must <a href="%s" class="faq-login-link">login</a> or <a href="%s" class="faq-login-link">register</a> to ask a question.';
+// faq ends
+$_['text_edit_review']         = 'Edit Review';

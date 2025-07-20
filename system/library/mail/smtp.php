@@ -205,7 +205,12 @@ class Smtp {
 					throw new \Exception('Error: Password not accepted from server!');
 				}
 			} else {
-				fputs($handle, 'HELO ' . getenv('SERVER_NAME') . "\r\n");
+				$helo = parse_url(HTTP_SERVER, PHP_URL_HOST); // safer domain
+            if (!$helo) {
+                $helo = 'localhost'; // fallback
+            }
+            fputs($handle, 'EHLO ' . $helo . "\r\n"); // use EHLO instead of HELO
+
 
 				$reply = '';
 

@@ -15,11 +15,49 @@ class ModelSaleReturn extends Model {
 		$this->db->query("DELETE FROM `" . DB_PREFIX . "return_history` WHERE `return_id` = '" . (int)$return_id . "'");
 	}
 
+    // update the query on 20-05-2025 -------------------
 	public function getReturn($return_id) {
-		$query = $this->db->query("SELECT DISTINCT *, (SELECT CONCAT(c.firstname, ' ', c.lastname) FROM " . DB_PREFIX . "customer c WHERE c.customer_id = r.customer_id) AS customer, (SELECT rs.name FROM " . DB_PREFIX . "return_status rs WHERE rs.return_status_id = r.return_status_id AND rs.language_id = '" . (int)$this->config->get('config_language_id') . "') AS return_status FROM `" . DB_PREFIX . "return` r WHERE r.return_id = '" . (int)$return_id . "'");
+    // 	$query = $this->db->query("SELECT DISTINCT *, (SELECT CONCAT(c.firstname, ' ', c.lastname) FROM " . DB_PREFIX . "customer c WHERE c.customer_id = r.customer_id) AS customer, (SELECT rs.name FROM " . DB_PREFIX . "return_status rs WHERE rs.return_status_id = r.return_status_id AND rs.language_id = '" . (int)$this->config->get('config_language_id') . "') AS return_status FROM `" . DB_PREFIX . "return` r WHERE r.return_id = '" . (int)$return_id . "'");
+       	$query = $this->db->query("SELECT DISTINCT r.*, 
+        CONCAT(c.firstname, ' ', c.lastname) AS customer, 
+        GROUP_CONCAT(ri.image SEPARATOR ', ') AS images, 
+        rs.name AS return_status 
+		FROM `" . DB_PREFIX . "return` r
+		LEFT JOIN `" . DB_PREFIX . "customer` c ON c.customer_id = r.customer_id
+		LEFT JOIN `" . DB_PREFIX . "return_image` ri ON ri.return_id = r.return_id
+		LEFT JOIN `" . DB_PREFIX . "return_status` rs ON rs.return_status_id = r.return_status_id 
+			AND rs.language_id = '" . (int)$this->config->get('config_language_id') . "'
+		WHERE r.return_id = '" . (int)$return_id . "' 
+		GROUP BY r.return_id");
 
 		return $query->row;
 	}
+	//----------------------------------------------------------------
+	// added the code product return 20-05-2025 ------------------------------------------------------
+	public function getReturnsImage($return_id) {
+        $query = $this->db->query("
+            SELECT r.return_id, r.order_id, r.product, ri.image
+            FROM " . DB_PREFIX . "return r
+            LEFT JOIN " . DB_PREFIX . "return_image ri ON r.return_id = ri.return_id
+            WHERE r.return_id = '" . (int)$return_id . "'
+        ");
+
+        return $query->rows; // Returns all images for the given return_id
+    }
+    
+    public function approve($return_id, $product_id, $rma_no) {
+		$this->db->query("UPDATE " . DB_PREFIX . "return 
+						  SET approved = '1', 
+							  rma_no = '" . $this->db->escape($rma_no) . "', 
+							  product_id = '" . (int)$product_id . "' 
+						  WHERE return_id = '" . (int)$return_id . "'");
+	}
+	
+	// Disapprove a return request
+    public function disapprove($return_id) {
+        $this->db->query("UPDATE " . DB_PREFIX . "return SET approved = '0' WHERE return_id = '" . (int)$return_id . "'");
+    }
+    //--------------------------------------------------------------------------------
 
 	public function getReturns($data = array()) {
 		$sql = "SELECT *, CONCAT(r.firstname, ' ', r.lastname) AS customer, (SELECT rs.name FROM " . DB_PREFIX . "return_status rs WHERE rs.return_status_id = r.return_status_id AND rs.language_id = '" . (int)$this->config->get('config_language_id') . "') AS return_status FROM `" . DB_PREFIX . "return` r";

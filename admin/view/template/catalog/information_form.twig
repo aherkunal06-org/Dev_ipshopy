@@ -145,8 +145,12 @@
                     <td class="text-left">{{ store.name }}</td>
                     <td class="text-left">{% for language in languages %}
                       <div class="input-group"><span class="input-group-addon"><img src="language/{{ language.code }}/{{ language.code }}.png" title="{{ language.name }}" /></span>
-                        <input type="text" name="information_seo_url[{{ store.store_id }}][{{ language.language_id }}]" value="{% if information_seo_url[store.store_id][language.language_id] %}{{ information_seo_url[store.store_id][language.language_id] }}{% endif %}" placeholder="{{ entry_keyword }}" class="form-control" />
+                       {# added id in the below input tag 01-04-2025 ------------#}
+                        <input type="text" id="seoUrlInput" name="information_seo_url[{{ store.store_id }}][{{ language.language_id }}]" value="{% if information_seo_url[store.store_id][language.language_id] %}{{ information_seo_url[store.store_id][language.language_id] }}{% endif %}" placeholder="{{ entry_keyword }}" class="form-control" />
                       </div>
+                      {# added below line  01-04-2025 -----------#}
+                      <small id="seoUrlError" style="color: red; display: none;">Spaces are not allowed in the SEO URL!</small>
+                      {#-------------------------#}
                       {% if error_keyword[store.store_id][language.language_id] %}
                       <div class="text-danger">{{ error_keyword[store.store_id][language.language_id] }}</div>
                       {% endif %} 
@@ -205,4 +209,20 @@
   <script type="text/javascript"><!--
 $('#language a:first').tab('show');
 //--></script></div>
+
+{# added on 01-04-2025 -----------#}
+    <script>
+		document.getElementById("seoUrlInput").addEventListener("input", function() {
+		    let inputField = this;
+		    let errorText = document.getElementById("seoUrlError");
+		
+		    if (/\s/.test(inputField.value)) { 
+		        errorText.style.display = "block";
+		        inputField.value = inputField.value.replace(/\s/g, ''); 
+		    } else {
+		        errorText.style.display = "none";
+		    }
+		});
+		</script>
+{#----------------------------------#}
 {{ footer }} 

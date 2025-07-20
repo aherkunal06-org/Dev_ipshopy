@@ -79,6 +79,18 @@ class ControllerAccountLogin extends Controller {
 			if (isset($this->request->post['redirect']) && $this->request->post['redirect'] != $this->url->link('account/logout', '', true) && (strpos($this->request->post['redirect'], $this->config->get('config_url')) !== false || strpos($this->request->post['redirect'], $this->config->get('config_ssl')) !== false)) {
 				$this->response->redirect(str_replace('&amp;', '&', $this->request->post['redirect']));
 			} else {
+			    	if ($this->session->data['referral_code'] != null) {
+					$this->load->model('ipoffer/offer');
+					// var_dump('checking user : ', $this->model_ipoffer_offer->checkuserfirsttime());
+					$sameuser=$this->model_ipoffer_offer->getReferralByCode();
+					if($sameuser['customer_id'] != $this->customer->getCustomerID()){
+    					if (!$this->model_ipoffer_offer->checkuserfirsttime()) {
+    						$this->model_ipoffer_offer->disReferralVisit($this->session->data['referral_code']);
+    						unset($this->session->data['referral_code']);
+    						// $this->model_ipoffer_offer->incrementReferralVisit($referral_code);
+    					}
+    				}
+				}
 				$this->response->redirect($this->url->link('account/account', '', true));
 			}
 		}

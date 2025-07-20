@@ -30,6 +30,9 @@
                 <label for="input-password">{{ entry_password }}</label>
                 <div class="input-group"><span class="input-group-addon"><i class="fa fa-lock"></i></span>
                   <input type="password" name="password" value="{{ password }}" placeholder="{{ entry_password }}" id="input-password" class="form-control" />
+                  <span class="input-group-addon" style="cursor: pointer;" onclick="togglePassword()">
+                        <i class="fa fa-eye" id="togglePasswordIcon"></i>
+                  </span>
                 </div>
                 {% if forgotten %}
                 <span class="help-block"><a href="{{ forgotten }}">{{ text_forgotten }}</a></span>
@@ -48,4 +51,19 @@
     </div>
   </div>
 </div>
+
+<script>
+     function togglePassword() {
+        var passwordInput = document.getElementById('input-password');
+        var toggleIcon = document.getElementById('togglePasswordIcon');
+                        
+        if (passwordInput.type === 'password') {
+             passwordInput.type = 'text';
+             toggleIcon.className = 'fa fa-eye-slash';
+        } else {
+               passwordInput.type = 'password';
+               toggleIcon.className = 'fa fa-eye';
+            }
+     }
+</script>
 {{ footer }}

@@ -46,6 +46,7 @@ $_['text_product']              = 'Products';
 $_['text_reports']              = 'Reports';
 $_['text_review']               = 'Reviews';
 $_['text_return']               = 'Returns';
+$_['text_claim']                = 'Return Claim';
 $_['text_return_action']        = 'Return Actions';
 $_['text_return_reason']        = 'Return Reasons';
 $_['text_return_status']        = 'Return Statuses';
@@ -74,3 +75,14 @@ $_['text_order_recurring']      = 'Recurring Orders';
 $_['text_complete_status']      = 'Orders Completed';
 $_['text_processing_status']    = 'Orders Processing';
 $_['text_other_status']         = 'Other Statuses';
+// added at 14-05-2025 for customer order history========================
+$_['text_customer_order_history']= ' Customer Order History';
+
+// ----- added the changes for the asign work on 07-06-2025 ------------
+$_['text_assign_sellers'] = 'Assign Sellers';
+$_['text_order_tracking'] = 'Order Tracking';
+$_['text_tracking_registration'] = 'Seller Registration Tracking';
+
+// ==========-------------===========
+
+$_['text_category_management'] = 'Category Mangaement';

@@ -1,0 +1,3 @@
+2024-04-28 0:59:08 - PHP Warning:  mysqli::__construct(): (42000/1226): User 'ipshopyc_ip2024' has exceeded the 'max_user_connections' resource (current value: 30) in /home/ipshopyc/public_html/system/library/db/mysqli.php on line 7
+2024-04-28 0:59:08 - PHP Warning:  DB\MySQLi::__construct(): Couldn't fetch mysqli in /home/ipshopyc/public_html/system/library/db/mysqli.php on line 10
+2024-04-28 0:59:08 - PHP Warning:  DB\MySQLi::__construct(): Couldn't fetch mysqli in /home/ipshopyc/public_html/system/library/db/mysqli.php on line 10

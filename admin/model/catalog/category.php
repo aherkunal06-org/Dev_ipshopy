@@ -1,6 +1,14 @@
 <?php
 class ModelCatalogCategory extends Model {
 	public function addCategory($data) {
+	    		$level = 0;
+		if ((int)$data['parent_id'] > 0) {
+			$query = $this->db->query("SELECT level FROM " . DB_PREFIX . "category WHERE category_id = '" . (int)$data['parent_id'] . "'");
+			if ($query->num_rows) {
+				$level = (int)$query->row['level'] + 1;
+			}
+		}
+// 		level end 
 		$this->db->query("INSERT INTO " . DB_PREFIX . "category SET parent_id = '" . (int)$data['parent_id'] . "', `top` = '" . (isset($data['top']) ? (int)$data['top'] : 0) . "', `column` = '" . (int)$data['column'] . "', sort_order = '" . (int)$data['sort_order'] . "', status = '" . (int)$data['status'] . "', date_modified = NOW(), date_added = NOW()");
 
 		$category_id = $this->db->getLastId();
@@ -8,7 +16,11 @@ class ModelCatalogCategory extends Model {
 		if (isset($data['image'])) {
 			$this->db->query("UPDATE " . DB_PREFIX . "category SET image = '" . $this->db->escape($data['image']) . "' WHERE category_id = '" . (int)$category_id . "'");
 		}
-
+// banner start
+		if (isset($data['category_banner'])) {
+			$this->db->query("UPDATE " . DB_PREFIX . "category SET category_banner = '" . $this->db->escape($data['category_banner']) . "' WHERE category_id = '" . (int)$category_id . "'");
+		}
+// 		banner end
 		foreach ($data['category_description'] as $language_id => $value) {
 			$this->db->query("INSERT INTO " . DB_PREFIX . "category_description SET category_id = '" . (int)$category_id . "', language_id = '" . (int)$language_id . "', name = '" . $this->db->escape($value['name']) . "', description = '" . $this->db->escape($value['description']) . "', meta_title = '" . $this->db->escape($value['meta_title']) . "', meta_description = '" . $this->db->escape($value['meta_description']) . "', meta_keyword = '" . $this->db->escape($value['meta_keyword']) . "'");
 		}
@@ -66,7 +78,12 @@ class ModelCatalogCategory extends Model {
 		if (isset($data['image'])) {
 			$this->db->query("UPDATE " . DB_PREFIX . "category SET image = '" . $this->db->escape($data['image']) . "' WHERE category_id = '" . (int)$category_id . "'");
 		}
-
+		// pdate banner image if set
+		if (isset($data['category_banner'])) {
+			$this->db->query("UPDATE " . DB_PREFIX . "category SET 
+				category_banner = '" . $this->db->escape($data['category_banner']) . "' 
+				WHERE category_id = '" . (int)$category_id . "'");
+		}
 		$this->db->query("DELETE FROM " . DB_PREFIX . "category_description WHERE category_id = '" . (int)$category_id . "'");
 
 		foreach ($data['category_description'] as $language_id => $value) {
@@ -216,7 +233,7 @@ class ModelCatalogCategory extends Model {
 	}
 
 	public function getCategories($data = array()) {
-		$sql = "SELECT cp.category_id AS category_id, GROUP_CONCAT(cd1.name ORDER BY cp.level SEPARATOR '&nbsp;&nbsp;&gt;&nbsp;&nbsp;') AS name, c1.parent_id, c1.sort_order FROM " . DB_PREFIX . "category_path cp LEFT JOIN " . DB_PREFIX . "category c1 ON (cp.category_id = c1.category_id) LEFT JOIN " . DB_PREFIX . "category c2 ON (cp.path_id = c2.category_id) LEFT JOIN " . DB_PREFIX . "category_description cd1 ON (cp.path_id = cd1.category_id) LEFT JOIN " . DB_PREFIX . "category_description cd2 ON (cp.category_id = cd2.category_id) WHERE cd1.language_id = '" . (int)$this->config->get('config_language_id') . "' AND cd2.language_id = '" . (int)$this->config->get('config_language_id') . "'";
+		$sql = "SELECT cp.category_id AS category_id, GROUP_CONCAT(cd1.name ORDER BY cp.level SEPARATOR '&nbsp;&nbsp;&gt;&nbsp;&nbsp;') AS name, c1.parent_id, c1.sort_order FROM " . DB_PREFIX . "category_path cp LEFT JOIN " . DB_PREFIX . "category c1 ON (cp.category_id = c1.category_id) LEFT JOIN " . DB_PREFIX . "category c2 ON (cp.path_id = c2.category_id) LEFT JOIN " . DB_PREFIX . "category_description cd1 ON (cp.path_id = cd1.category_id) LEFT JOIN " . DB_PREFIX . "category_description cd2 ON (cp.category_id = cd2.category_id) WHERE cd1.language_id = '" . (int)$this->config->get('config_language_id') . "' AND cd2.language_id = '" . (int)$this->config->get('config_language_id') . "' AND cp.category_id > 1886";
 
 		if (!empty($data['filter_name'])) {
 			$sql .= " AND cd2.name LIKE '%" . $this->db->escape($data['filter_name']) . "%'";
@@ -331,7 +348,7 @@ class ModelCatalogCategory extends Model {
 	}
 
 	public function getTotalCategories() {
-		$query = $this->db->query("SELECT COUNT(*) AS total FROM " . DB_PREFIX . "category");
+		$query = $this->db->query("SELECT COUNT(*) AS total FROM " . DB_PREFIX . "category ");
 
 		return $query->row['total'];
 	}
@@ -341,4 +358,82 @@ class ModelCatalogCategory extends Model {
 
 		return $query->row['total'];
 	}	
+// 	---------------------------
+
+
+public function getAllParentCategories($language_id) {
+    $sql = "SELECT c.category_id, cd.name 
+            FROM " . DB_PREFIX . "category c 
+            LEFT JOIN " . DB_PREFIX . "category_description cd 
+                ON (c.category_id = cd.category_id) 
+            WHERE c.parent_id = 0 
+            AND c.category_id > 1886
+              AND cd.language_id = '" . (int)$language_id . "' 
+            ORDER BY cd.name ASC";
+
+    $query = $this->db->query($sql);
+    return $query->rows;
+}
+public function getSubCategories1($parent_id = 0) {
+    $sql = "SELECT c.category_id, cd.name 
+            FROM " . DB_PREFIX . "category c 
+            LEFT JOIN " . DB_PREFIX . "category_description cd 
+            ON (c.category_id = cd.category_id) 
+            WHERE c.parent_id = '" . (int)$parent_id . "' 
+            AND cd.language_id = '" . (int)$this->config->get('config_language_id') . "' 
+             AND c.category_id > 1886
+            ORDER BY cd.name ASC ";
+
+    $query = $this->db->query($sql);
+    return $query->rows;
+}
+
+
+public function getCategoryFullPath($category_id) {
+    $path = [];
+
+    while ($category_id != 0) {
+        $query = $this->db->query("SELECT c.category_id, c.parent_id, cd.name 
+                                   FROM " . DB_PREFIX . "category c 
+                                   LEFT JOIN " . DB_PREFIX . "category_description cd 
+                                   ON (c.category_id = cd.category_id) 
+                                   WHERE c.category_id = '" . (int)$category_id . "' 
+                                   AND cd.language_id = '" . (int)$this->config->get('config_language_id') . "'");
+
+        if ($query->num_rows) {
+            $path[] = [
+                'path_id' => $query->row['category_id'],
+                'category_name' => $query->row['name'],
+                'level' => 0  // set temporary; we will fix below
+            ];
+            $category_id = $query->row['parent_id'];
+        } else {
+            break;
+        }
+    }
+
+    // reverse and assign correct levels
+    $path = array_reverse($path);
+    foreach ($path as $i => &$p) {
+        $p['level'] = $i;
+    }
+	
+
+    return $path;
+}
+
+
+
+
+public function getCategoryByName($name) {
+    $query = $this->db->query("SELECT c.category_id, cd.name 
+        FROM " . DB_PREFIX . "category_description cd 
+        LEFT JOIN " . DB_PREFIX . "category c ON (cd.category_id = c.category_id) 
+        WHERE cd.name = '" . $this->db->escape($name) . "' 
+        AND cd.language_id = '" . (int)$this->config->get('config_language_id') . "' 
+        LIMIT 1");
+
+    return $query->row;
+}
+
 }

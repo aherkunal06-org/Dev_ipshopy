@@ -14,6 +14,12 @@ $_['text_product']         = 'Product Information &amp; Reason for Return';
 $_['text_history']         = 'History';
 $_['text_history_add']     = 'Add History';
 
+// added code for product return on 20-05-2025 ------------------------
+$_['text_enable']       	 = 'Enable';
+$_['text_disable']       	 = 'Disable';
+$_['text_waitingapproved']   = 'Waiting for Approved';
+//--------------------------------------------------------
+
 // Column
 $_['column_return_id']     = 'Return ID';
 $_['column_order_id']      = 'Order ID';
@@ -26,6 +32,10 @@ $_['column_date_modified'] = 'Date Modified';
 $_['column_comment']       = 'Comment';
 $_['column_notify']        = 'Customer Notified';
 $_['column_action']        = 'Action';
+
+//added code product return on 20-05-2025 -------------
+$_['column_approve']       	 = 'Approve';
+//--------------------------------------------
 
 // Entry
 $_['entry_customer']       = 'Customer';
@@ -61,3 +71,8 @@ $_['error_email']          = 'E-Mail Address does not appear to be valid!';
 $_['error_telephone']      = 'Telephone must be between 3 and 32 characters!';
 $_['error_product']        = 'Product Name must be greater than 3 and less than 255 characters!';
 $_['error_model']          = 'Product Model must be greater than 3 and less than 64 characters!';
+
+// Button added on 20-05-2025
+$_['button_approve']       	 = 'Approve';
+$_['button_desapprove']      = 'Disapprove';
+

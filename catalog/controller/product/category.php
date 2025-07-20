@@ -64,9 +64,16 @@ class ControllerProductCategory extends Controller {
 			$path = '';
 
 			$parts = explode('_', (string)$this->request->get['path']);
-
+		
 			$category_id = (int)array_pop($parts);
+// 			category level start 
+		$category_level = null;
+		if (!empty($this->request->get['level'])) {
+        $level_parts = explode('_', (string)$this->request->get['level']);
+        $category_level = (int)array_pop($level_parts); // Get last level
+}
 
+// category level end 
 			foreach ($parts as $path_id) {
 				if (!$path) {
 					$path = (int)$path_id;
@@ -85,11 +92,40 @@ class ControllerProductCategory extends Controller {
 			}
 		} else {
 			$category_id = 0;
+			$category_level=null;
 		}
+		
+		
+		
+      
+
+// filter start---------------------------------------------------------------------------------
+$manufacturer_ids = isset($this->request->get['manufacturer']) ? (array)$this->request->get['manufacturer'] : [];
+$filter_colors = isset($this->request->get['color']) ? (array)$this->request->get['color'] : [];
+$filter_sizes = isset($this->request->get['size']) ? (array)$this->request->get['size'] : [];
+$filter_discounts = isset($this->request->get['discount']) ? (array)$this->request->get['discount'] : [];
+$filter_ratings = isset($this->request->get['rating']) ? (array)$this->request->get['rating'] : [];
+$min_price = isset($this->request->get['min']) ? (float)$this->request->get['min'] : 0;
+$max_price = isset($this->request->get['max']) ? (float)$this->request->get['max'] : 999999;
+
+
+// filter end---------------------------------------------------------------------------------
+
+
 
 		$category_info = $this->model_catalog_category->getCategory($category_id);
+  // banner start-----------------------------------------------------------------------------
+        // var_dump($category_info['category_banner'],'category banners');
+        if ($category_info && !empty($category_info['category_banner'])) {
+            $data['category_banner'] = 'image/' . $category_info['category_banner'];
+        } else {
+            $data['category_banner'] = '';
+        }
+        
+        // banner end-----------------------------------------------------------------------------
 
 		if ($category_info) {
+        
 			$this->document->setTitle($category_info['meta_title']);
 			$this->document->setDescription($category_info['meta_description']);
 			$this->document->setKeywords($category_info['meta_keyword']);
@@ -149,18 +185,37 @@ class ControllerProductCategory extends Controller {
 
 			$data['products'] = array();
 
-			$filter_data = array(
-				'filter_category_id' => $category_id,
-				'filter_filter'      => $filter,
-				'sort'               => $sort,
-				'order'              => $order,
-				'start'              => ($page - 1) * $limit,
-				'limit'              => $limit
-			);
+// 			$filter_data = array(
+// 				'filter_category_id' => $category_id,
+// 				'filter_filter'      => $filter,
+// 				'sort'               => $sort,
+// 				'order'              => $order,
+// 				'start'              => ($page - 1) * $limit,
+// 				'limit'              => $limit
+// 			);
+
+$filter_data = array(
+    'filter_category_id'    => $category_id,
+    'filter_category_level'    => $category_level,
+    'filter_filter'         => $filter,
+    'filter_manufacturers'  => $manufacturer_ids,
+    'filter_colors'         => $filter_colors,
+    'filter_sizes'          => $filter_sizes,
+    'filter_discounts'      => $filter_discounts,
+    'filter_ratings'        => $filter_ratings,
+    'min_price'             => $min_price,
+    'max_price'             => $max_price,
+    'sort'                  => $sort,
+    'order'                 => $order,
+    'start'                 => ($page - 1) * $limit,
+    'limit'                 => $limit
+);
 
 			$product_total = $this->model_catalog_product->getTotalProducts($filter_data);
 
+    
 			$results = $this->model_catalog_product->getProducts($filter_data);
+
 
 			foreach ($results as $result) {
 				if ($result['image']) {
@@ -333,7 +388,7 @@ class ControllerProductCategory extends Controller {
 
 			// http://googlewebmastercentral.blogspot.com/2011/09/pagination-with-relnext-and-relprev.html
 			if ($page == 1) {
-			    $this->document->addLink($this->url->link('product/category', 'path=' . $category_info['category_id']), 'canonical');
+			    $this->document->addLink($this->url->link('product/category', 'path=' . $category_info['category_id'], true), 'canonical');
 			} else {
 				$this->document->addLink($this->url->link('product/category', 'path=' . $category_info['category_id'] . '&page='. $page), 'canonical');
 			}
@@ -359,8 +414,16 @@ class ControllerProductCategory extends Controller {
 			$data['footer'] = $this->load->controller('common/footer');
 			$data['header'] = $this->load->controller('common/header');
 
+
+
+  $data['pricefilter'] = $this->load->controller('product/filtercombo');
+
+
 			$this->response->setOutput($this->load->view('product/category', $data));
 		} else {
+		      $data['pricefilter'] = $this->load->controller('product/filtercombo');
+
+
 			$url = '';
 
 			if (isset($this->request->get['path'])) {

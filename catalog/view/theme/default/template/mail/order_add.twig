@@ -1,116 +1,234 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/1999/REC-html401-19991224/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title>{{ title }}</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Order Confirmation - IPSHOPY</title>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 12px;
+      color: #000;
+      margin: 0;
+      padding: 0;
+    }
+
+    .wrapper {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 10px;
+    }
+
+    .header {
+      background-color: #953a93;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .content {
+      padding: 15px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    td {
+      font-size: 12px;
+      padding: 7px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+
+    thead td {
+      background-color: #efefef;
+      font-weight: bold;
+      color: #222;
+    }
+
+    .footer {
+      background-color: #f0f0f0;
+      text-align: center;
+      padding: 15px;
+      font-size: 12px;
+      color: #999;
+    }
+
+    .product-table {
+      width: 100%;
+      min-width: unset;
+    }
+
+    .product-name {
+      width: 250px;
+      white-space: normal;
+    }
+
+    .table-scroll-wrapper {
+      overflow: visible;
+      border: none;
+      padding-bottom: 0;
+    }
+
+    @media only screen and (max-width: 600px) {
+      .table-scroll-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border: 1px solid #ccc;
+        padding-bottom: 8px;
+      }
+
+      .product-table {
+        width: 900px;
+        min-width: 700px;
+      }
+
+      .product-table td {
+        font-size: 9px;
+      }
+
+      .table-scroll-wrapper::-webkit-scrollbar {
+        height: 8px;
+      }
+
+      .table-scroll-wrapper::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+
+      .table-scroll-wrapper::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+      }
+
+      .table-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+        background: #555;
+      }
+    }
+  </style>
 </head>
-<body style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #000000;">
-<div style="width: 680px;"><a href="{{ store_url }}" title="{{ store_name }}"><img src="{{ logo }}" alt="{{ store_name }}" style="margin-bottom: 20px; border: none;" /></a>
-  <p style="margin-top: 0px; margin-bottom: 20px;">{{ text_greeting }}</p>
-  {% if customer_id %}
-  <p style="margin-top: 0px; margin-bottom: 20px;">{{ text_link }}</p>
-  <p style="margin-top: 0px; margin-bottom: 20px;"><a href="{{ link }}">{{ link }}</a></p>
-  {% endif %}
-  {% if download %}
-  <p style="margin-top: 0px; margin-bottom: 20px;">{{ text_download }}</p>
-  <p style="margin-top: 0px; margin-bottom: 20px;"><a href="{{ download }}">{{ download }}</a></p>
-  <{% endif %}
-  <table style="border-collapse: collapse; width: 100%; border-top: 1px solid #DDDDDD; border-left: 1px solid #DDDDDD; margin-bottom: 20px;">
-    <thead>
-      <tr>
-        <td style="font-size: 12px; border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; background-color: #EFEFEF; font-weight: bold; text-align: left; padding: 7px; color: #222222;" colspan="2">{{ text_order_detail }}</td>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td style="font-size: 12px;	border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; text-align: left; padding: 7px;"><b>{{ text_order_id }}</b> {{ order_id }}<br />
-          <b>{{ text_date_added }}</b> {{ date_added }}<br />
-          <b>{{ text_payment_method }}</b> {{ payment_method }}<br />
-          {% if shipping_method %} <b>{{ text_shipping_method }}</b> {{ shipping_method }}
-          {% endif %}</td>
-        <td style="font-size: 12px;	border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; text-align: left; padding: 7px;"><b>{{ text_email }}</b> {{ email }}<br />
-          <b>{{ text_telephone }}</b> {{ telephone }}<br />
-          <b>{{ text_ip }}</b> {{ ip }}<br />
-          <b>{{ text_order_status }}</b> {{ order_status }}<br /></td>
-      </tr>
-    </tbody>
-  </table>
-  {% if comment %}
-  <table style="border-collapse: collapse; width: 100%; border-top: 1px solid #DDDDDD; border-left: 1px solid #DDDDDD; margin-bottom: 20px;">
-    <thead>
-      <tr>
-        <td style="font-size: 12px; border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; background-color: #EFEFEF; font-weight: bold; text-align: left; padding: 7px; color: #222222;">{{ text_instruction }}</td>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td style="font-size: 12px;	border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; text-align: left; padding: 7px;">{{ comment }}</td>
-      </tr>
-    </tbody>
-  </table>
-  {% endif %}
-  <table style="border-collapse: collapse; width: 100%; border-top: 1px solid #DDDDDD; border-left: 1px solid #DDDDDD; margin-bottom: 20px;">
-    <thead>
-      <tr>
-        <td style="font-size: 12px; border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; background-color: #EFEFEF; font-weight: bold; text-align: left; padding: 7px; color: #222222;">{{ text_payment_address }}</td>
-        {% if shipping_address %}
-        <td style="font-size: 12px; border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; background-color: #EFEFEF; font-weight: bold; text-align: left; padding: 7px; color: #222222;">{{ text_shipping_address }}</td>
-        {% endif %} </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td style="font-size: 12px;	border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; text-align: left; padding: 7px;">{{ payment_address }}</td>
-        {% if shipping_address %}
-        <td style="font-size: 12px;	border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; text-align: left; padding: 7px;">{{ shipping_address }}</td>
-        {% endif %} </tr>
-    </tbody>
-  </table>
-  <table style="border-collapse: collapse; width: 100%; border-top: 1px solid #DDDDDD; border-left: 1px solid #DDDDDD; margin-bottom: 20px;">
-    <thead>
-      <tr>
-        <td style="font-size: 12px; border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; background-color: #EFEFEF; font-weight: bold; text-align: left; padding: 7px; color: #222222;">{{ text_product }}</td>
-        <td style="font-size: 12px; border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; background-color: #EFEFEF; font-weight: bold; text-align: left; padding: 7px; color: #222222;">{{ text_model }}</td>
-        <td style="font-size: 12px; border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; background-color: #EFEFEF; font-weight: bold; text-align: right; padding: 7px; color: #222222;">{{ text_quantity }}</td>
-        <td style="font-size: 12px; border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; background-color: #EFEFEF; font-weight: bold; text-align: right; padding: 7px; color: #222222;">{{ text_price }}</td>
-        <td style="font-size: 12px; border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; background-color: #EFEFEF; font-weight: bold; text-align: right; padding: 7px; color: #222222;">{{ text_total }}</td>
-      </tr>
-    </thead>
-    <tbody>
-    
-    {% for product in products %}
-    <tr>
-      <td style="font-size: 12px; border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; text-align: left; padding: 7px;">{{ product.name }}
-        {% for option in product.option %}<br />
-        &nbsp;<small> - {{ option.name }}: {{ option.value }}</small>{% endfor %}</td>
-      <td style="font-size: 12px; border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; text-align: left; padding: 7px;">{{ product.model }}</td>
-      <td style="font-size: 12px;	border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; text-align: right; padding: 7px;">{{ product.quantity }}</td>
-      <td style="font-size: 12px;	border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; text-align: right; padding: 7px;">{{ product.price }}</td>
-      <td style="font-size: 12px;	border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; text-align: right; padding: 7px;">{{ product.total }}</td>
-    </tr>
-    {% endfor %}
-    {% for voucher in vouchers %}
-    <tr>
-      <td style="font-size: 12px;	border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; text-align: left; padding: 7px;">{{ voucher.description }}</td>
-      <td style="font-size: 12px;	border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; text-align: left; padding: 7px;"></td>
-      <td style="font-size: 12px;	border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; text-align: right; padding: 7px;">1</td>
-      <td style="font-size: 12px;	border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; text-align: right; padding: 7px;">{{ voucher.amount }}</td>
-      <td style="font-size: 12px;	border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; text-align: right; padding: 7px;">{{ voucher.amount }}</td>
-    </tr>
-    {% endfor %}
-      </tbody>
-    
-    <tfoot>
-    
-    {% for total in totals %}
-    <tr>
-      <td style="font-size: 12px;	border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; text-align: right; padding: 7px;" colspan="4"><b>{{ total.title }}:</b></td>
-      <td style="font-size: 12px;	border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; text-align: right; padding: 7px;">{{ total.text }}</td>
-    </tr>
-    {% endfor %}
-      </tfoot>
-    
-  </table>
-  <p style="margin-top: 0px; margin-bottom: 20px;">{{ text_footer }}</p>
-</div>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <h2>Order Confirmation</h2>
+    </div>
+
+    <div class="content">
+      <p>Hello {{ firstname }} {{ lastname }},</p>
+      <p>Thank you for your order! You can view your order by clicking the link below:</p>
+      <p><a href="{{ order_link }}">{{ order_link }}</a></p>
+
+      <table>
+        <thead>
+          <tr><td colspan="2">Order Details</td></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <strong>Order ID:</strong> {{ order_id }}<br>
+              <strong>Date Added:</strong> {{ date_added }}<br>
+              <strong>Payment Method:</strong> {{ payment_method }}<br>
+              <strong>Shipping Method:</strong> {{ shipping_method }}
+            </td>
+            <td>
+              <strong>Email:</strong> {{ email }}<br>
+              <strong>Telephone:</strong> {{ telephone }}<br>
+              <strong>IP Address:</strong> {{ ip }}<br>
+              <strong>Order Status:</strong> {{ order_status }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table>
+        <thead><tr><td>Instructions</td></tr></thead>
+        <tbody>
+          <tr><td>Please ensure someone is available to receive the package at the given address.</td></tr>
+        </tbody>
+      </table>
+
+      <table>
+        <thead>
+          <tr>
+            <td>Payment Address</td>
+            <td>Shipping Address</td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{ payment_address|nl2br }}</td>
+            <td>{{ shipping_address|nl2br }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="table-scroll-wrapper">
+        <table class="product-table">
+          <thead>
+            <tr>
+              <td class="product-name">Product</td>
+              <td>Model</td>
+              <td style="text-align:right;">Quantity</td>
+              <td style="text-align:right;">GST</td>
+              <td style="text-align:right;">Courier Charges</td>
+              <td style="text-align:right;">Price</td>
+              <td style="text-align:right;">Total</td>
+            </tr>
+          </thead>
+          <tbody>
+            {% for product in products %}
+              <tr>
+                <td class="product-name">{{ product.name }}</td>
+                <td>{{ product.model }}</td>
+                <td style="text-align:right;">{{ product.quantity }}</td>
+                <td style="text-align:right;">&#8377;{{ product.gst }}</td>
+                <td style="text-align:right;">{{ product.courier }}</td>
+                <td style="text-align:right;">{{ product.price }}</td>
+                <td style="text-align:right;">{{ product.total }}</td>
+              </tr>
+            {% endfor %}
+
+            {% for voucher in vouchers %}
+              <tr>
+                <td class="product-name">{{ voucher.description }}</td>
+                <td></td>
+                <td style="text-align:right;">1</td>
+                <td colspan="2"></td>
+                <td colspan="2" style="text-align:right;">{{ voucher.amount }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+          {#<tfoot>#}
+          {#  <tr>#}
+          {#    <td colspan="5"></td>#}
+          {#    <td style="text-align:right;"><strong>Subtotal:</strong></td>#}
+          {#    <td style="text-align:right;">{{ subtotal }}</td>#}
+          {#  </tr>#}
+          {#  <tr>#}
+          {#    <td colspan="5"></td>#}
+          {#    <td style="text-align:right;"><strong>GST:</strong></td>#}
+          {#    <td style="text-align:right;">{{ gst_total }}</td>#}
+          {#  </tr>#}
+          {#  <tr>#}
+          {#    <td colspan="5"></td>#}
+          {#    <td style="text-align:right;"><strong>Total:</strong></td>#}
+          {#    <td style="text-align:right;">{{ total }}</td>#}
+          {#  </tr>#}
+          {#</tfoot>#}
+        </table>
+      </div>
+
+      <p>If you have any questions, just reply to this email — we're happy to help!</p>
+      <p style="margin-top: 30px; font-size: 14px; color: #555;">
+        Thanks for shopping with us!<br><strong>IPSHOPY</strong>
+      </p>
+    </div>
+
+    <div class="footer">
+      &copy; {{ "now"|date("Y") }} IPSHOPY. All rights reserved.
+    </div>
+  </div>
 </body>
 </html>

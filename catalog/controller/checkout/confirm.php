@@ -1,18 +1,29 @@
 <?php
 class ControllerCheckoutConfirm extends Controller {
+	private $log;
+	
+	public function __construct($registry) {
+		parent::__construct($registry);
+		$this->log = new Log('razorpay.log');
+	}
 	public function index() {
 		$redirect = '';
-
+// if($this->request->post['testing']){
+//     	echo '<pre>';
+// 		print_r($this->session->data);
+// 		echo '</pre>';
+// 		exit;
+// }
 		if ($this->cart->hasShipping()) {
 			// Validate if shipping address has been set.
 			if (!isset($this->session->data['shipping_address'])) {
 				$redirect = $this->url->link('checkout/checkout', '', true);
 			}
 
-			// Validate if shipping method has been set.
-			if (!isset($this->session->data['shipping_method'])) {
-				$redirect = $this->url->link('checkout/checkout', '', true);
-			}
+			// Validate if shipping method has been set.   commented for new checkout testing
+// 			if (!isset($this->session->data['shipping_method'])) { 
+// 				$redirect = $this->url->link('checkout/checkout', '', true);
+// 			}
 		} else {
 			unset($this->session->data['shipping_address']);
 			unset($this->session->data['shipping_method']);
@@ -155,6 +166,8 @@ class ControllerCheckoutConfirm extends Controller {
 			} else {
 				$order_data['payment_method'] = '';
 			}
+			
+// 			var_dump($order_data['payment_method']);
 
 			if (isset($this->session->data['payment_method']['code'])) {
 				$order_data['payment_code'] = $this->session->data['payment_method']['code'];
@@ -225,6 +238,7 @@ class ControllerCheckoutConfirm extends Controller {
 
 				$order_data['products'][] = array(
 					'product_id' => $product['product_id'],
+					'vendor_id'  => $this->getVendorIdForProduct($product['product_id']),
 					'name'       => $product['name'],
 					'model'      => $product['model'],
 					'option'     => $option_data,
@@ -318,10 +332,163 @@ class ControllerCheckoutConfirm extends Controller {
 			} else {
 				$order_data['accept_language'] = '';
 			}
+			
+			
+// 		updated on 31-03-2025  split order
+// split order changes 18-03-2025
+// changes about the low order fees on 31-03-2025
 
-			$this->load->model('checkout/order');
 
-			$this->session->data['order_id'] = $this->model_checkout_order->addOrder($order_data);
+			// -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			// Split orders product-wise instead of vendor-wise
+$this->load->model('checkout/order');
+
+// Initialize flags and totals
+$first_product = true;
+$low_order_fee_applied = false;
+$low_order_fee_threshold = 500;
+$low_order_fee_amount = 80;
+$subtotal = $this->cart->getSubTotal();
+
+$order_ids = []; // Store order IDs for each product
+$grand_total = (float)$order_data['total'];
+$grand_courier_charges=null;
+$grand_final_total=null;
+// Create a separate order for each product
+// $courierChargess += $courierResult['courier_charge'];
+foreach ($order_data['products'] as $product) {
+    $product_total = $product['total'];
+    $order_total = $product_total;
+
+    // Apply coupon/voucher discount proportionally
+    if (isset($order_data['coupon_discount']) && $order_data['coupon_discount'] > 0) {
+        $discount_ratio = $product_total / $grand_total;
+        $discount_amount = $order_data['coupon_discount'] * $discount_ratio;
+        $order_total -= $discount_amount;
+    }
+    
+    // Apply low order fee only for the first product if subtotal is less than threshold
+    if ($first_product && !$low_order_fee_applied && $subtotal < $low_order_fee_threshold) {
+        $order_total += $low_order_fee_amount;
+        $low_order_fee_applied = true;
+    }
+
+    // Clone order data for this product
+    $product_order_data = $order_data;
+    $product_order_data['products'] = array($product); // Only this product
+    $product_order_data['total'] = $order_total;
+
+    // Adjust voucher amounts if needed
+    if (!empty($order_data['vouchers'])) {
+        $product_order_data['vouchers'] = array();
+        
+        foreach ($order_data['vouchers'] as $voucher) {
+            $voucher_discount_ratio = $product_total / $grand_total;
+            $voucher_amount = $voucher['amount'] * $voucher_discount_ratio;
+
+            $product_order_data['vouchers'][] = array(
+                'description'      => $voucher['description'],
+                'code'             => $voucher['code'],
+                'to_name'          => $voucher['to_name'],
+                'to_email'         => $voucher['to_email'],
+                'from_name'        => $voucher['from_name'],
+                'from_email'       => $voucher['from_email'],
+                'voucher_theme_id' => $voucher['voucher_theme_id'],
+                'message'          => $voucher['message'],
+                'amount'           => $voucher_amount
+            );
+        }
+    }
+    // courier charges 
+    $this->load->model('catalog/product');
+    $courierResult = $this->model_catalog_product->getCourierCharges($product['product_id'], $order_data['shipping_postcode']);
+    $Total=((float)$product['price'] * (float)$product['quantity']);
+	if ($courierResult['courier_charge']) {
+    $courierCharges = $courierResult['courier_charge'];
+	
+	$freeCharges = $courierResult['freeCharges'];
+	$localCharges =  $courierResult['local_charges'];
+		
+	$quantity = (int)$product['quantity'];
+		if ((float)$product['quantity'] === 1) {
+			$final_courier_charges = (float)$courierCharges;
+			$final_total = (float)$final_courier_charges + $Total;
+		} else if ((float)$product['quantity'] < (float)$freeCharges) {
+			$final_courier_charges = (float)$localCharges * (float)$product['quantity']; // FIXED LOGIC
+			$final_total = (float)$final_courier_charges + $Total;
+		} else {
+			$final_courier_charges = 0;
+			$final_total = (float)$final_courier_charges + $Total;
+		}
+	} else {
+	    if($Total<500){
+	        
+		$final_courier_charges = 80;
+	    }else{
+	        
+	    $final_courier_charges = 0;
+	    }
+		$final_total = $Total+$final_courier_charges;
+	 }
+
+    $product_order_data['final_courier_charges'] = $final_courier_charges;                                                                                                                                                                                                                      
+    $product_order_data['final_total'] = $final_total;     
+    $grand_courier_charges +=$final_courier_charges;
+    $grand_final_total+=$final_total;
+    				// Ensure referral code is set in tracking
+//     if (isset($this->session->data['referral_code'])) {
+// 		$product_order_data['tracking'] = $this->session->data['referral_code'];
+// 	}
+    // Create order for this product
+    $order_id = $this->model_checkout_order->addOrder($product_order_data);
+    
+	$order_status_id = 2; // Default status, you can adjust as needed (e.g., 'Pending', 'Processing', etc.)
+	$comment = "Order has been placed and is now being processed."; // You can customize the comment
+	$notify = false;
+    // $order_ids[$product['product_id']] = $order_id;
+	$order_ids[] = $order_id;
+
+    
+    $first_product = false;
+}
+
+// Store product-wise order IDs in session
+$this->session->data['order_id'] = $order_ids;
+if($order_ids){
+ // If $order_ids is an array, convert to string:
+    if (is_array($order_ids)) {
+        // $order_ids_str = implode(',', array_map('intval', $order_ids));
+           $order_ids_str = json_encode(array_map('intval', $order_ids));
+    } else {
+        // $order_ids_str = $order_ids;
+            $order_ids_str = json_encode([(int)$order_ids]);
+    }
+
+    if (!empty($order_ids_str)) {
+        $parent_data = [
+            'order_ids' => $order_ids_str,
+            'courier_charges' => $grand_courier_charges,
+            'total' => $grand_final_total
+        ];
+
+        $parent_order_id = $this->model_checkout_order->addOrderParent($parent_data);
+        $this->session->data['parent_order_id'] = $parent_order_id;
+        $data['parent_order'] = $parent_order_id;
+        
+        // Log the parent order ID being set in session
+        $this->log->write('Setting parent_order_id in session: ' . $parent_order_id);
+    }
+}
+            // 	$this->load->model('checkout/order');
+
+            //  $this->session->data['order_id'] = $this->model_checkout_order->addOrder($order_data);
+            
+
+// razorpay logic
+
+
+// end here
+
 
 			$this->load->model('tool/upload');
 
@@ -411,7 +578,17 @@ class ControllerCheckoutConfirm extends Controller {
 		} else {
 			$data['redirect'] = $redirect;
 		}
+		
 
 		$this->response->setOutput($this->load->view('checkout/confirm', $data));
 	}
+	
+	private function getVendorIdForProduct($product_id) {
+        $query = $this->db->query("SELECT vendor_id FROM " . DB_PREFIX . "vendor_to_product WHERE product_id = '" . (int)$product_id . "'");
+        if ($query->num_rows) {
+            return $query->row['vendor_id'];
+        } else {
+            return 0; // Return 0 or a default value if no vendor is found
+        }
+    }
 }

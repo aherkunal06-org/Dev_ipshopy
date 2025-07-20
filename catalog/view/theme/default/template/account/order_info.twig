@@ -24,7 +24,17 @@
     {% set class = 'col-sm-12' %}
     {% endif %}
     <div id="content" class="{{ class }}">{{ content_top }}
-      <h2>{{ heading_title }}</h2>
+      <div class="container-fluid">
+        <h2>{{ heading_title }}</h2>
+        <div class="pull-right">
+          {% if invoice %}
+          <a href="{{ invoice }}" target="_blank" data-toggle="tooltip" title="Download Invoice" class="btn btn-info" id="button-invoice">
+              <i class="fa fa-print"></i>
+          </a>
+          <a href="{{ cancel }}" data-toggle="tooltip" title="Back" class="btn btn-default"><i class="fa fa-reply"></i></a>
+          {% endif %}
+        </div>
+      </div>
       <table class="table table-bordered table-hover">
         <thead>
           <tr>
@@ -65,24 +75,55 @@
               <td class="text-left">{{ column_name }}</td>
               <td class="text-left">{{ column_model }}</td>
               <td class="text-right">{{ column_quantity }}</td>
+              {#<td class="text-right">IGST </td>#}
+              <td class="text-right">GST</td>
+              <td class="text-right">Courier Rate </td>
               <td class="text-right">{{ column_price }}</td>
               <td class="text-right">{{ column_total }}</td>
+              
               {% if products %}
-              <td style="width: 20px;"></td>
+              <td style="width: 20px;">{{column_reorder}}</td>
               {% endif %} </tr>
           </thead>
           <tbody>
           
           {% for product in products %}
+          {% set product_price = product.price|replace({'₹':'', ',':''}) %}
+          {% set product_quantity = product.quantity %}
+          {% set price_total = price_total + (product_price * product_quantity) %}
           <tr>
             <td class="text-left">{{ product.name }}
               {% for option in product.option %} <br />
               &nbsp;<small> - {{ option.name }}: {{ option.value }}</small> {% endfor %}</td>
             <td class="text-left">{{ product.model }}</td>
             <td class="text-right">{{ product.quantity }}</td>
-            <td class="text-right">{{ product.price }}</td>
-            <td class="text-right">{{ product.total }}</td>
-            <td class="text-right" style="white-space: nowrap;">{% if product.reorder %} <a href="{{ product.reorder }}" data-toggle="tooltip" title="{{ button_reorder }}" class="btn btn-primary"><i class="fa fa-shopping-cart"></i></a> {% endif %} <a href="{{ product.return }}" data-toggle="tooltip" title="{{ button_return }}" class="btn btn-danger"><i class="fa fa-reply"></i></a></td>
+              {#<td class="text-right">{{ product.gst_rate }}</td>#}
+              {#igst===========#}
+            {#{% set rate = product.gst_rate is defined and product.gst_rate > 0 ? product.gst_rate : 18 %}#}
+            {#{% if gst_type == 'cgst_sgst' %}#}
+            {#  <td>₹{{ product.cgst|number_format(2) }}<br /> <span style='padding-top:5px;'> ({{ (product.gst_rate / 2)|number_format(0) }}%)</span></td>#}
+            {#  <td>₹{{ product.sgst|number_format(2) }}<br /><span style='padding-top:5px;'> ({{ (product.gst_rate / 2)|number_format(0) }}%)</span></td>#}
+            {#{% else %}#}
+            {#  <td class="text-center">₹{{ product.igst|number_format(2, '.', '') }}<br /><span style='padding-top:2px;'> ({{ (product.gst_rate / 2)|number_format(0) }}%)</span></td>#}
+            {#{% endif %}#}
+            {#==--------------------------------===========#}
+            {#gst rate#}
+            {% if gst_type == 'cgst_sgst' %}
+                {% set gst_total = gst_total + (product.cgst + product.sgst) %}
+              {% else %}
+                {% set gst_total = gst_total + product.igst %}
+              {% endif %}
+              <td class="text-right">₹{{ gst_total|number_format(0, '.', '')  }}</td>
+            {#-------===#}
+               <td class="text-right">{{ product.courier_charges }}</td>
+               <td class="text-right">{{ price_total }}</td>
+               <td class="text-right">{{ product.total }}</td>
+           
+            {#<td class="text-right" style="white-space: nowrap;">{% if product.reorder %} <a href="{{ product.reorder }}" data-toggle="tooltip" title="{{ button_reorder }}" class="btn btn-primary"><i class="fa fa-shopping-cart"></i></a> {% endif %}#}
+            {#{% if show_return_button %}<a href="{{ product.return }}" data-toggle="tooltip" title="{{ button_return }}" class="btn btn-danger"><i class="fa fa-reply"></i></a>{% endif %}  #}
+            {#</td>#}
+            <td class="text-right" style="white-space: nowrap;">{% if product.reorder %} <a href="{{ product.reorder }}" data-toggle="tooltip" title="{{ button_reorder }}" class="btn btn-primary"><i class="fa fa-shopping-cart"></i></a> {% endif %} {% if show_return_button %}<a href="{{ product.return }}" data-toggle="tooltip" title="{{ button_return }}" class="btn btn-danger"><i >{{ button_return }}</i></a>{% endif %}</td>
+
           </tr>
           {% endfor %}
           {% for voucher in vouchers %}
@@ -98,64 +139,71 @@
           {% endfor %}
             </tbody>
           
-          <tfoot>
+          {#<tfoot>#}
+              
+          {#    {% for total in totals %}#}
+          {#    <tr>#}
+          {#      <td colspan="3"></td>#}
+          {#      <td class="text-right"><b>{{ total.title }}</b></td>#}
+          {#      <td class="text-right">{{ total.text }}</td>#}
+          {#      {% if products %}#}
+          {#      <td></td>#}
+          {#      {% endif %} </tr>#}
+          {#    {% endfor %}#}
+          {#</tfoot>#}
           
-          {% for total in totals %}
-          <tr>
-            <td colspan="3"></td>
-            <td class="text-right"><b>{{ total.title }}</b></td>
-            <td class="text-right">{{ total.text }}</td>
-            {% if products %}
-            <td></td>
-            {% endif %} </tr>
-          {% endfor %}
-            </tfoot>
+          {#addded by govind on 19-03-2025#}
+          {#<tfoot>  #}
+          {#  <td colspan="3"></td>#}
+          {#    <td class="text-right"><b>Total</b></td>#}
+          {#    <td class="text-right">{{ product_total }}</td>#}
+          {#</tfoot>#}
           
         </table>
       </div>
-      {% if comment %}
-      <table class="table table-bordered table-hover">
-        <thead>
-          <tr>
-            <td class="text-left">{{ text_comment }}</td>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="text-left">{{ comment }}</td>
-          </tr>
-        </tbody>
-      </table>
-      {% endif %}
-      {% if histories %}
-      <h3>{{ text_history }}</h3>
-      <table class="table table-bordered table-hover">
-        <thead>
-          <tr>
-            <td class="text-left">{{ column_date_added }}</td>
-            <td class="text-left">{{ column_status }}</td>
-            <td class="text-left">{{ column_comment }}</td>
-          </tr>
-        </thead>
-        <tbody>
+      {#{% if comment %}#}
+      {#<table class="table table-bordered table-hover">#}
+      {#  <thead>#}
+      {#    <tr>#}
+      {#      <td class="text-left">{{ text_comment }}</td>#}
+      {#    </tr>#}
+      {#  </thead>#}
+      {#  <tbody>#}
+      {#    <tr>#}
+      {#      <td class="text-left">{{ comment }}</td>#}
+      {#    </tr>#}
+      {#  </tbody>#}
+      {#</table>#}
+      {#{% endif %}#}
+      {#{% if histories %}#}
+      {#<h3>{{ text_history }}</h3>#}
+      {#<table class="table table-bordered table-hover">#}
+        {#<thead>#}
+        {#  <tr>#}
+        {#    <td class="text-left">{{ column_date_added }}</td>#}
+        {#    <td class="text-left">{{ column_status }}</td>#}
+        {#    <td class="text-left">{{ column_comment }}</td>#}
+        {#  </tr>#}
+        {#</thead>#}
+        {#<tbody>#}
         
-        {% if histories %}
-        {% for history in histories %}
-        <tr>
-          <td class="text-left">{{ history.date_added }}</td>
-          <td class="text-left">{{ history.status }}</td>
-          <td class="text-left">{{ history.comment }}</td>
-        </tr>
-        {% endfor %}
-        {% else %}
-        <tr>
-          <td colspan="3" class="text-center">{{ text_no_results }}</td>
-        </tr>
-        {% endif %}
-          </tbody>
+        {#{% if histories %}#}
+        {#{% for history in histories %}#}
+        {#<tr>#}
+        {#  <td class="text-left">{{ history.date_added }}</td>#}
+        {#  <td class="text-left">{{ history.status }}</td>#}
+        {#  <td class="text-left">{{ history.comment }}</td>#}
+        {#</tr>#}
+        {#{% endfor %}#}
+        {#{% else %}#}
+        {#<tr>#}
+        {#  <td colspan="3" class="text-center">{{ text_no_results }}</td>#}
+        {#</tr>#}
+        {#{% endif %}#}
+        {#  </tbody>#}
         
-      </table>
-      {% endif %}
+      {#</table>#}
+      {#{% endif %}#}
       <div class="buttons clearfix">
         <div class="pull-right"><a href="{{ continue }}" class="btn btn-primary">{{ button_continue }}</a></div>
       </div>

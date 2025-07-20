@@ -69,6 +69,23 @@ class ModelSaleOrder extends Model {
 			} else {
 				$language_code = $this->config->get('config_language');
 			}
+			
+// 			16-06-2025---------------------
+           // ✅ Fetch signatures vendor-wise per product_id
+            $vendor_signature_map = [];
+            
+            $signature_query = $this->db->query("
+            	SELECT vop.product_id, v.signature
+            	FROM " . DB_PREFIX . "vendor_order_product vop
+            	LEFT JOIN " . DB_PREFIX . "vendor v ON vop.vendor_id = v.vendor_id
+            	WHERE vop.order_id = '" . (int)$order_id . "'
+            ");
+            
+            foreach ($signature_query->rows as $row) {
+            	$vendor_signature_map[$row['product_id']] = $row['signature'];
+            }
+
+// -------------------------========
 
 			return array(
 				'order_id'                => $order_query->row['order_id'],
@@ -140,7 +157,11 @@ class ModelSaleOrder extends Model {
 				'user_agent'              => $order_query->row['user_agent'],
 				'accept_language'         => $order_query->row['accept_language'],
 				'date_added'              => $order_query->row['date_added'],
-				'date_modified'           => $order_query->row['date_modified']
+				'date_modified'           => $order_query->row['date_modified'],
+				'total_courier_charges'   => $order_query->row['total_courier_charges'],
+				'vendor_signatures' => $vendor_signature_map
+
+				
 			);
 		} else {
 			return;
@@ -148,7 +169,16 @@ class ModelSaleOrder extends Model {
 	}
 
 	public function getOrders($data = array()) {
-		$sql = "SELECT o.order_id, CONCAT(o.firstname, ' ', o.lastname) AS customer, (SELECT os.name FROM " . DB_PREFIX . "order_status os WHERE os.order_status_id = o.order_status_id AND os.language_id = '" . (int)$this->config->get('config_language_id') . "') AS order_status, o.shipping_code, o.total, o.currency_code, o.currency_value, o.date_added, o.date_modified FROM `" . DB_PREFIX . "order` o";
+	    //update the following to get the estimated charges, label and awbno
+// 		$sql = "SELECT o.order_id, o.net_settlement, o.estimated_courier_charges,o.awbno,o.shipping_label, CONCAT(o.firstname, ' ', o.lastname) AS customer, (SELECT os.name FROM " . DB_PREFIX . "order_status os WHERE os.order_status_id = o.order_status_id AND os.language_id = '" . (int)$this->config->get('config_language_id') . "') AS order_status, o.shipping_code, o.total, o.currency_code, o.currency_value, o.date_added, o.date_modified FROM `" . DB_PREFIX . "order` o";
+        //updated the following query to get the seller name
+        $sql =  "SELECT o.order_id, o.net_settlement, o.estimated_courier_charges, o.awbno, o.shipping_label, CONCAT(o.firstname, ' ', o.lastname) AS customer, 
+            (SELECT os.name FROM " . DB_PREFIX . "order_status os WHERE os.order_status_id = o.order_status_id AND os.language_id = '" . (int)$this->config->get('config_language_id') . "') AS order_status, 
+            o.shipping_code, o.total, o.currency_code, o.currency_value, o.date_added, o.date_modified,
+            v.firstname AS vendor_firstname, v.lastname AS vendor_lastname
+            FROM `" . DB_PREFIX . "order` o
+            LEFT JOIN `" . DB_PREFIX . "vendor_order_product` vop ON vop.order_id = o.order_id
+            LEFT JOIN `" . DB_PREFIX . "vendor` v ON v.vendor_id = vop.vendor_id";
 
 		if (!empty($data['filter_order_status'])) {
 			$implode = array();
@@ -187,6 +217,11 @@ class ModelSaleOrder extends Model {
 		if (!empty($data['filter_total'])) {
 			$sql .= " AND o.total = '" . (float)$data['filter_total'] . "'";
 		}
+		
+		if (!empty($data['filter_name'])){
+		 	$sql .=" and CONCAT(v.firstname, ' ', v.lastname) LIKE '%" . $this->db->escape($data['filter_name'])."%'";
+		}
+
 
 		$sort_data = array(
 			'o.order_id',
@@ -257,7 +292,12 @@ class ModelSaleOrder extends Model {
 	}
 	
 	public function getTotalOrders($data = array()) {
-		$sql = "SELECT COUNT(*) AS total FROM `" . DB_PREFIX . "order`";
+        // $sql = "SELECT COUNT(*) AS total FROM `" . DB_PREFIX . "order`";
+        // update the query for the seller name filter on 27/06/2025
+        $sql = "SELECT COUNT(*) AS total 
+                FROM `" . DB_PREFIX . "order` o
+                LEFT JOIN `" . DB_PREFIX . "vendor_order_product` vop ON vop.order_id = o.order_id
+                LEFT JOIN `" . DB_PREFIX . "vendor` v ON v.vendor_id = vop.vendor_id"; 
 
 		if (!empty($data['filter_order_status'])) {
 			$implode = array();
@@ -265,36 +305,40 @@ class ModelSaleOrder extends Model {
 			$order_statuses = explode(',', $data['filter_order_status']);
 
 			foreach ($order_statuses as $order_status_id) {
-				$implode[] = "order_status_id = '" . (int)$order_status_id . "'";
+				$implode[] = "o.order_status_id = '" . (int)$order_status_id . "'";
 			}
 
 			if ($implode) {
 				$sql .= " WHERE (" . implode(" OR ", $implode) . ")";
 			}
 		} elseif (isset($data['filter_order_status_id']) && $data['filter_order_status_id'] !== '') {
-			$sql .= " WHERE order_status_id = '" . (int)$data['filter_order_status_id'] . "'";
+			$sql .= " WHERE o.order_status_id = '" . (int)$data['filter_order_status_id'] . "'";
 		} else {
-			$sql .= " WHERE order_status_id > '0'";
+			$sql .= " WHERE o.order_status_id > '0'";
 		}
 
 		if (!empty($data['filter_order_id'])) {
-			$sql .= " AND order_id = '" . (int)$data['filter_order_id'] . "'";
+			$sql .= " AND o.order_id = '" . (int)$data['filter_order_id'] . "'";
 		}
 
 		if (!empty($data['filter_customer'])) {
-			$sql .= " AND CONCAT(firstname, ' ', lastname) LIKE '%" . $this->db->escape($data['filter_customer']) . "%'";
+			$sql .= " AND CONCAT(o.firstname, ' ', o.lastname) LIKE '%" . $this->db->escape($data['filter_customer']) . "%'";
 		}
 
 		if (!empty($data['filter_date_added'])) {
-			$sql .= " AND DATE(date_added) = DATE('" . $this->db->escape($data['filter_date_added']) . "')";
+			$sql .= " AND DATE(o.date_added) = DATE('" . $this->db->escape($data['filter_date_added']) . "')";
 		}
 
 		if (!empty($data['filter_date_modified'])) {
-			$sql .= " AND DATE(date_modified) = DATE('" . $this->db->escape($data['filter_date_modified']) . "')";
+			$sql .= " AND DATE(o.date_modified) = DATE('" . $this->db->escape($data['filter_date_modified']) . "')";
 		}
 
 		if (!empty($data['filter_total'])) {
-			$sql .= " AND total = '" . (float)$data['filter_total'] . "'";
+			$sql .= " AND o.total = '" . (float)$data['filter_total'] . "'";
+		}
+		
+		if (!empty($data['filter_name'])){
+		 	$sql .=" and CONCAT(v.firstname, ' ', v.lastname) LIKE '%" . $this->db->escape($data['filter_name'])."%'";
 		}
 
 		$query = $this->db->query($sql);
@@ -475,4 +519,30 @@ class ModelSaleOrder extends Model {
 
 		return $query->row['total'];
 	}
+	
+// 	added for fetch vendor name based on order id 
+// 	public function getVendorsByOrderId($order_id) {
+//     $query = $this->db->query("SELECT vop.order_id, v.vendor_id, CONCAT(v.firstname, ' ', v.lastname) AS vendor_name FROM " . DB_PREFIX . "vendor_order_product vop JOIN " . DB_PREFIX . "vendor v ON vop.vendor_id = v.vendor_id WHERE  vop.order_id = '" . (int)$order_id . "'");
+
+//     return $query->rows;
+// }
+
+public function getVendorsByOrderId($order_id) {
+    $query = $this->db->query("
+        SELECT 
+            vop.order_id, 
+            v.vendor_id, 
+            CONCAT(v.firstname, ' ', v.lastname) AS vendor_name 
+        FROM 
+            " . DB_PREFIX . "vendor_order_product vop 
+        JOIN 
+            " . DB_PREFIX . "vendor v ON vop.vendor_id = v.vendor_id 
+        WHERE  
+            vop.order_id = " . (int)$order_id
+    );
+
+    return $query->rows;
+}
+
+
 }

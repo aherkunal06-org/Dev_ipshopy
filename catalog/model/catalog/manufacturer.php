@@ -56,4 +56,16 @@ class ModelCatalogManufacturer extends Model {
 			return $manufacturer_data;
 		}
 	}
+	
+	
+	public function getManufacturersWithImageLimit($limit=30) {
+$sql = "SELECT * FROM " . DB_PREFIX . "manufacturer 
+        WHERE image IS NOT NULL AND image != '' 
+        LIMIT " . (int)$limit;
+
+
+    $query = $this->db->query($sql);
+
+    return $query->rows;
+}
 }

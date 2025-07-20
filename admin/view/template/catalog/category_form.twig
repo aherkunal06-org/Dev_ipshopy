@@ -41,15 +41,123 @@
               <div class="tab-content">
                 {% for language in languages %}
                 <div class="tab-pane" id="language{{ language.language_id }}">
-                  <div class="form-group required">
-                    <label class="col-sm-2 control-label" for="input-name{{ language.language_id }}">{{ entry_name }}</label>
-                    <div class="col-sm-10">
-                      <input type="text" name="category_description[{{ language.language_id }}][name]" value="{{ category_description[language.language_id] ? category_description[language.language_id].name }}" placeholder="{{ entry_name }}" id="input-name{{ language.language_id }}" class="form-control" />
-                      {% if error_name[language.language_id] %}
-                      <div class="text-danger">{{ error_name[language.language_id] }}</div>
-                      {% endif %}
-                    </div>
-                  </div>
+                  {#<div class="form-group required">#}
+                  {#  <label class="col-sm-2 control-label" for="input-name{{ language.language_id }}">{{ entry_name }}</label>#}
+                  {#  <div class="col-sm-10">#}
+                  {#    <input type="text" name="category_description[{{ language.language_id }}][name]" value="{{ category_description[language.language_id] ? category_description[language.language_id].name }}" placeholder="{{ entry_name }}" id="input-name{{ language.language_id }}" class="form-control" />#}
+                  {#    {% if error_name[language.language_id] %}#}
+                  {#    <div class="text-danger">{{ error_name[language.language_id] }}</div>#}
+                  {#    {% endif %}#}
+                  {#  </div>#}
+                  {#</div>#}
+                  
+                    <!-- Category Name Field -->
+                  {% if is_edit %}
+  <!-- Show read-only path, don't send parent_id or levels -->
+  <div class="form-group">
+    <label class="col-sm-2 control-label">{{ entry_parent }}</label>
+    <div class="col-sm-10">
+      {% for category in category_path %}
+        <input type="text" class="form-control" value="{{ category.category_name }}" readonly style="margin-bottom: 5px;" />
+      {% endfor %}
+      <input type="hidden" name="parent_id" value="{{ parent_id }}" />
+
+    </div>
+  </div>
+
+  <div class="form-group required">
+    <label class="col-sm-2 control-label" for="input-name{{ language.language_id }}">{{ entry_name }}</label>
+    <div class="col-sm-10">
+      <input type="text"
+             name="category_description[{{ language.language_id }}][name]"
+             value="{{ category_description[language.language_id] ? category_description[language.language_id].name }}"
+             placeholder="{{ entry_name }}"
+             id="input-name{{ language.language_id }}"
+             class="form-control" />
+      {% if error_name[language.language_id] %}
+        <div class="text-danger">{{ error_name[language.language_id] }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label class="col-sm-2 control-label">{{ entry_level }}</label>
+    <div class="col-sm-10">
+      <input type="text" value="{{ category_level }}" class="form-control" readonly />
+    </div>
+  </div>
+{% else %}
+
+
+  <!-- Add Mode -->
+  <div class="form-group">
+    <label class="col-sm-2 control-label" for="input-parent">{{ entry_parent }}</label>
+    <div class="col-sm-10">
+      <select name="parent_id" id="input-parent" class="form-control">
+        <option value="0">{{ text_select }}</option>
+        {% for category in parent_categories %}
+          <option value="{{ category.category_id }}" {% if category.category_id == parent_id %}selected="selected"{% endif %}>
+            {{ category.category_name }}
+          </option>
+        {% endfor %}
+      </select>
+
+      <input type="hidden" name="path" id="input-path" value="{{ path }}" />
+
+      {% if error_parent %}
+        <div class="text-danger">{{ error_parent }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Level 2 Category Dropdown (initially hidden) -->
+  <div class="form-group" id="level2-group" style="display: none;">
+    <label class="col-sm-2 control-label" for="input-level2">Parent Category (level 1)</label>
+    <div class="col-sm-10">
+      <select name="level2_id" id="input-level2" class="form-control">
+        <option value="0">{{ text_select }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Level 3 Category Dropdown (initially hidden) -->
+  <div class="form-group" id="level3-group" style="display: none;">
+    <label class="col-sm-2 control-label" for="input-level3">Parent Category (level 2)</label>
+    <div class="col-sm-10">
+      <select name="level3_id" id="input-level3" class="form-control">
+        <option value="0">{{ text_select }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Level 4 Category Dropdown (initially hidden) -->
+  <div class="form-group" id="level4-group" style="display: none;">
+    <label class="col-sm-2 control-label" for="input-level4">Parent Category (level 3)</label>
+    <div class="col-sm-10">
+      <select name="level4_id" id="input-level4" class="form-control">
+        <option value="0">{{ text_select }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Category Name (Add Mode) -->
+  <div class="form-group required">
+    <label class="col-sm-2 control-label" for="input-name{{ language.language_id }}">{{ entry_name }}</label>
+    <div class="col-sm-10">
+      <input type="text"
+             name="category_description[{{ language.language_id }}][name]"
+             value="{{ category_description[language.language_id] ? category_description[language.language_id].name }}"
+             placeholder="{{ entry_name }}"
+             id="input-name{{ language.language_id }}"
+             class="form-control" />
+      {% if error_name[language.language_id] %}
+        <div class="text-danger">{{ error_name[language.language_id] }}</div>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+
+                  
                   <div class="form-group">
                     <label class="col-sm-2 control-label" for="input-description{{ language.language_id }}">{{ entry_description }}</label>
                     <div class="col-sm-10">
@@ -82,16 +190,16 @@
               </div>
             </div>
             <div class="tab-pane" id="tab-data">
-              <div class="form-group">
-                <label class="col-sm-2 control-label" for="input-parent">{{ entry_parent }}</label>
-                <div class="col-sm-10">
-                  <input type="text" name="path" value="{{ path }}" placeholder="{{ entry_parent }}" id="input-parent" class="form-control" />
-                  <input type="hidden" name="parent_id" value="{{ parent_id }}" />
-                  {% if error_parent %}
-                  <div class="text-danger">{{ error_parent }}</div>
-                  {% endif %}
-                </div>
-              </div>
+              {#<div class="form-group">#}
+              {#  <label class="col-sm-2 control-label" for="input-parent">{{ entry_parent }}</label>#}
+              {#  <div class="col-sm-10">#}
+              {#    <input type="text" name="path" value="{{ path }}" placeholder="{{ entry_parent }}" id="input-parent" class="form-control" />#}
+              {#    <input type="hidden" name="parent_id" value="{{ parent_id }}" />#}
+              {#    {% if error_parent %}#}
+              {#    <div class="text-danger">{{ error_parent }}</div>#}
+              {#    {% endif %}#}
+              {#  </div>#}
+              {#</div>#}
               <div class="form-group">
                 <label class="col-sm-2 control-label" for="input-filter"><span data-toggle="tooltip" title="{{ help_filter }}">{{ entry_filter }}</span></label>
                 <div class="col-sm-10">
@@ -131,6 +239,17 @@
                   <input type="hidden" name="image" value="{{ image }}" id="input-image" />
                 </div>
               </div>
+              {#banner #}
+                 <div class="form-group">
+                <label class="col-sm-2 control-label">{{ entry_banner }}</label>
+                <div class="col-sm-10">
+                  <a href="" id="thumb-banner" data-toggle="image" class="img-thumbnail">
+                    <img src="{{ banner_thumb }}" alt="" title="" data-placeholder="{{ placeholder }}" />
+                  </a>
+                  <input type="hidden" name="category_banner" value="{{ category_banner }}" id="input-banner" />
+                </div>
+              </div>
+              {#banner end #}
               <div class="form-group">
                 <label class="col-sm-2 control-label" for="input-top"><span data-toggle="tooltip" title="{{ help_top }}">{{ entry_top }}</span></label>
                 <div class="col-sm-10">
@@ -188,8 +307,12 @@
                     <td class="text-left">{{ store.name }}</td>
                     <td class="text-left">{% for language in languages %}
                       <div class="input-group"><span class="input-group-addon"><img src="language/{{ language.code }}/{{ language.code }}.png" title="{{ language.name }}" /></span>
-                        <input type="text" name="category_seo_url[{{ store.store_id }}][{{ language.language_id }}]" value="{% if category_seo_url[store.store_id][language.language_id] %}{{ category_seo_url[store.store_id][language.language_id] }}{% endif %}" placeholder="{{ entry_keyword }}" class="form-control" />
+                        {# added id in the following input field 01-04-2025#}
+                        <input type="text" id="seoUrlInput" name="category_seo_url[{{ store.store_id }}][{{ language.language_id }}]" value="{% if category_seo_url[store.store_id][language.language_id] %}{{ category_seo_url[store.store_id][language.language_id] }}{% endif %}" placeholder="{{ entry_keyword }}" class="form-control" />
                       </div>
+                       {# added following line 01-04-2025 ------#}
+                        <small id="seoUrlError" style="color: red; display: none;">Spaces are not allowed in the SEO URL!</small>
+                                                        
                       {% if error_keyword[store.store_id][language.language_id] %}
                       <div class="text-danger">{{ error_keyword[store.store_id][language.language_id] }}</div>
                       {% endif %}
@@ -306,4 +429,135 @@ $('#category-filter').delegate('.fa-minus-circle', 'click', function() {
   <script type="text/javascript"><!--
 $('#language a:first').tab('show');
 //--></script></div>
+
+ {#added on 01-04-2025#}
+    <script>
+		document.getElementById("seoUrlInput").addEventListener("input", function() {
+		    let inputField = this;
+		    let errorText = document.getElementById("seoUrlError");
+		
+		    if (/\s/.test(inputField.value)) { 
+		        errorText.style.display = "block";
+		        inputField.value = inputField.value.replace(/\s/g, ''); 
+		    } else {
+		        errorText.style.display = "none";
+		    }
+		});
+		</script>
+ {#---------------------------------------------------#}
+    
+	<script type="text/javascript"> $(document).ready(function () {
+var userToken = '{{ user_token }}';
+
+// ---------- On Page Load: Load Parent Categories ----------
+$.ajax({
+url: 'index.php?route=catalog/category/getSubCategories1',
+type: 'GET',
+data: {
+user_token: userToken,
+parent_id: 0 // Fetch top-level categories
+},
+dataType: 'json',
+success: function (json) {
+var $parent = $('#input-parent');
+$parent.empty().append('<option value="0"> {{ text_select }}</option>');
+
+// console.log("Top-Level Categories (parent_id = 0):", json);
+
+$.each(json, function (i, item) {
+$parent.append('<option value="' + item.category_id + '">' + item.name + '</option>');
+});
+},
+error: function (xhr, ajaxOptions, thrownError) {
+alert("Error loading parent categories: " + thrownError);
+}
+});
+
+// ---------- Level 1 (Parent) Change ----------
+$('#input-parent').on('change', function () {
+var parentId = $(this).val();
+resetLevels([
+'#input-level2', '#input-level3', '#input-level4'
+], ['#level2-group', '#level3-group', '#level4-group']);
+
+if (parentId > 0) {
+loadSubCategories(parentId, '#input-level2', '#level2-group');
+}
+});
+
+// ---------- Level 2 Change ----------
+$('#input-level2').on('change', function () {
+var parentId = $(this).val();
+resetLevels([
+'#input-level3', '#input-level4'
+], ['#level3-group', '#level4-group']);
+
+if (parentId > 0) {
+loadSubCategories(parentId, '#input-level3', '#level3-group');
+}
+});
+
+// ---------- Level 3 Change ----------
+$('#input-level3').on('change', function () {
+var parentId = $(this).val();
+resetLevels(['#input-level4'], ['#level4-group']);
+
+if (parentId > 0) {
+loadSubCategories(parentId, '#input-level4', '#level4-group');
+}
+});
+
+// ---------- Utility: Reset Inputs & Hide ----------
+function resetLevels(inputs, groups) {
+inputs.forEach(id => $(id).html('<option value="0"> {{ text_select }}</option>'));
+groups.forEach(id => $(id).hide());
+}
+
+// ---------- Load Subcategories ----------
+function loadSubCategories(parentId, selectId, groupId) {
+$.ajax({
+url: 'index.php?route=catalog/category/getSubCategories1',
+type: 'GET',
+data: {
+user_token: userToken,
+parent_id: parentId
+},
+dataType: 'json',
+success: function (json) {
+if (json.length > 0) {
+$(selectId).html('<option value="0"> {{ text_select }}</option>');
+$.each(json, function (index, item) {
+$(selectId).append('<option value="' + item.category_id + '">' + item.name + '</option>');
+});
+$(groupId).show();
+} else {
+$(groupId).hide();
+}
+},
+error: function (xhr, ajaxOptions, thrownError) {
+alert(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText);
+}
+});
+}
+
+});
+</script>
+
+
+<script>
+	$('#form-category').on('submit', function (e) {
+var isEdit = "{{ is_edit is defined and is_edit ? 'true' : 'false' }}" === "true";
+
+if (! isEdit) {
+var parentId = $('#input-level4').val() && $('#input-level4').val() !== "0" ? $('#input-level4').val() : $('#input-level3').val() && $('#input-level3').val() !== "0" ? $('#input-level3').val() : $('#input-level2').val() && $('#input-level2').val() !== "0" ? $('#input-level2').val() : $('#input-parent').val();
+
+$('input[name="parent_id"]').remove();
+$('<input>').attr({type: 'hidden', name: 'parent_id', value: parentId}).appendTo('#form-category');
+
+// console.log("🟢 Add Mode: Submitting parent_id:", parentId);
+} else {
+// console.log("🟡 Edit Mode: Using existing parent_id");
+}
+});
+</script>
 {{ footer }}

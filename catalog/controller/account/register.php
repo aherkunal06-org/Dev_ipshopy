@@ -186,7 +186,6 @@ class ControllerAccountRegister extends Controller {
 		} else {
 			$data['captcha'] = '';
 		}
-
 		if ($this->config->get('config_account_id')) {
 			$this->load->model('catalog/information');
 
@@ -206,6 +205,7 @@ class ControllerAccountRegister extends Controller {
 		} else {
 			$data['agree'] = false;
 		}
+// var_dump(	$data['text_agree']);
 
 		$data['column_left'] = $this->load->controller('common/column_left');
 		$data['column_right'] = $this->load->controller('common/column_right');

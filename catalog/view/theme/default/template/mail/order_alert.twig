@@ -7,7 +7,7 @@
 {{ text_product }}
 
 {% for product in products %}
-{{ product.quantity }}x {{ product.name }} ({{ product.model }}) {{ product.total }}
+{{ product.quantity }}x {{ product.name }} ({{ product.model }})  {{ product.total }}
 {% if option %}
 {% for option in product.option %}
 	- {{ option.name }} {{ option.value }}

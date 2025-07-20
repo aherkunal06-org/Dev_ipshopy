@@ -333,6 +333,19 @@ footer h5 {
 	font-weight: bold;
 	color: #fff;
 }
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+
 /* alert */
 .alert {
 	padding: 8px 14px 8px 14px;

@@ -53,79 +53,39 @@
               <label class="control-label" for="input-status">{{ entry_status }}</label>
               <select name="filter_status" id="input-status" class="form-control">
                 <option value=""></option>
-                
-                
-                
+                {% if filter_status == '1' %}
+                    <option value="1" selected="selected">{{ text_enabled }}</option>
+                {% else %}
+                        <option value="1">{{ text_enabled }}</option>
+                {% endif %}
                   
-                
+                {% if filter_status == '0' %}
 
-                  {% if filter_status == '1' %}
+                    <option value="0" selected="selected">{{ text_disabled }}</option>
+                
+                {% else %}
+                        <option value="0">{{ text_disabled }}</option>
+                
+                {% endif %}
 
-                
-                
-                  
-                
-                
-                <option value="1" selected="selected">{{ text_enabled }}</option>
-                
-                
-                
-                  
-                
-
-                  {% else %}
-
-                
-                
-                  
-                
-                
-                <option value="1">{{ text_enabled }}</option>
-                
-                
-                
-                  
-                
-
-                  {% endif %}
-                  {% if filter_status == '0' %}
-
-                
-                
-                  
-                
-                
-                <option value="0" selected="selected">{{ text_disabled }}</option>
-                
-                
-                
-                  
-                
-
-                  {% else %}
-
-                
-                
-                  
-                
-                
-                <option value="0">{{ text_disabled }}</option>
-                
-                
-                
-                  
-                
-
-                  {% endif %}
-
-
-              
-              
-                
-              
-              
-              </select>
+                </select>
             </div>
+            {# -- added code for the username filter on 25-05-2025---#}
+            <!-- added by filter -->
+             <div class="form-group">
+              <label class="control-label" for="input-added-by">{{column_added_by}}</label>
+              <input type="text" name="filter_username" value="{{ filter_username }}" placeholder="Added By" id="input-added-by" class="form-control" autocomplete="off" />
+              <input type="hidden" name="filter_user_id" id="input-user-id" value="{{ filter_user_id }}" />
+            </div>
+
+            <div class="form-group">
+              <label class="control-label" for="input-edited-by">{{column_edited_by}}</label>
+              <input type="text" name="filter_username" value="{{ filter_username }}" placeholder="Edited By" id="input-edited-by" class="form-control" autocomplete="off" />
+              <input type="hidden" name="filter_user_id" id="input-user-id" value="{{ filter_user_id }}" />
+            </div>
+
+             <!-- -----====== --------------------------------------------->
+            
             <div class="form-group text-right">
               <button type="button" id="button-filter" class="btn btn-default"><i class="fa fa-filter"></i> {{ button_filter }}</button>
             </div>
@@ -150,6 +110,14 @@
                       <td class="text-right">{% if sort == 'p.price' %} <a href="{{ sort_price }}" class="{{ order|lower }}">{{ column_price }}</a> {% else %} <a href="{{ sort_price }}">{{ column_price }}</a> {% endif %}</td>
                       <td class="text-right">{% if sort == 'p.quantity' %} <a href="{{ sort_quantity }}" class="{{ order|lower }}">{{ column_quantity }}</a> {% else %} <a href="{{ sort_quantity }}">{{ column_quantity }}</a> {% endif %}</td>
                       <td class="text-left">{% if sort == 'p.status' %} <a href="{{ sort_status }}" class="{{ order|lower }}">{{ column_status }}</a> {% else %} <a href="{{ sort_status }}">{{ column_status }}</a> {% endif %}</td>
+                      {#-- added code for the show the username on 21-05-2025--#}
+                      <!-- User Name column -->
+
+                      <td class="text-left">{{ column_added_by}}</td>
+                      <td class="text-left">{{ column_edited_by }}</td>
+                      <td class="text-left">{{ column_approved_by }}</td>
+                      <!-- ------=======--------- -->
+                      {#------------------------------------------------------------#}
                       <td class="text-right">{{ column_action }}</td>
                     </tr>
                   </thead>
@@ -173,6 +141,13 @@
                       {% endif %}</td>
                     <td class="text-right">{% if product.quantity <= 0 %} <span class="label label-warning">{{ product.quantity }}</span> {% elseif product.quantity <= 5 %} <span class="label label-danger">{{ product.quantity }}</span> {% else %} <span class="label label-success">{{ product.quantity }}</span> {% endif %}</td>
                     <td class="text-left">{{ product.status }}</td>
+                    {# added code for the show the username on 21-05-2025---#}
+                    <!-- User Name column -->
+                     <td class="text-left">{{ product.added_by }}</td>
+                     <td class="text-left">{{ product.edited_by }}</td>
+                     <td class="text-left">{{ product.approved_by }}</td>
+                     <!-- ======------- -->
+                    {#---------------------------------------------------------#}
                     <td class="text-right"><a href="{{ product.edit }}" data-toggle="tooltip" title="{{ button_edit }}" class="btn btn-primary"><i class="fa fa-pencil"></i></a></td>
                   </tr>
                   {% endfor %}
@@ -195,6 +170,8 @@
       </div>
     </div>
   </div>
+  
+
   <script type="text/javascript"><!--
 $('#button-filter').on('click', function() {
 	var url = '';
@@ -228,7 +205,20 @@ $('#button-filter').on('click', function() {
 	if (filter_status !== '') {
 		url += '&filter_status=' + encodeURIComponent(filter_status);
 	}
-
+	
+    // added the changes for the filter on 21-05-2025 ---
+	var filter_added_by = $('#input-added-by').val();
+  
+      if (filter_added_by) {
+          url += '&filter_added_by=' + encodeURIComponent(filter_added_by);
+      }
+    
+      var filter_edited_by = $('#input-edited-by').val();
+    
+      if (filter_edited_by) {
+          url += '&filter_edited_by=' + encodeURIComponent(filter_edited_by);
+      }
+    // --------------------------------------------------------------------
 	location = 'index.php?route=catalog/product&user_token={{ user_token }}' + url;
 });
 //--></script> 
@@ -278,4 +268,86 @@ $('input[name=\'filter_model\']').autocomplete({
 	}
 });
 //--></script></div>
+{#// updated the changes for the filter automobile on 23-05-2025 -----#}
+
+  <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<script>
+// Autocomplete for username
+// Autocomplete for Added By
+    function combinedAutocomplete(selector, hiddenIdSelector) {
+      $(selector).autocomplete({
+        minLength: 0,
+        source: function (request, response) {
+          $.when(
+            // User autocomplete
+            $.ajax({
+              url: 'index.php?route=catalog/product/autocompleteUsername&user_token={{ user_token }}&filter_username=' 
+                   + encodeURIComponent(request.term),
+              dataType: 'json'
+            }),
+            // Vendor autocomplete
+            $.ajax({
+              url: 'index.php?route=vendor/vendor/autocomplete&user_token={{ user_token }}&filter_name=' 
+                   + encodeURIComponent(request.term),
+              dataType: 'json'
+            })
+          ).done(function (userData, vendorData) {
+            let combined = [];
+    
+            // Merge user results
+            if (Array.isArray(userData[0])) {
+              userData[0].forEach(item => {
+                if (item.username) {
+                  combined.push({
+                    label: item.username,
+                    value: item.username,
+                    user_id: item.user_id
+                  });
+                }
+              });
+            }
+    
+            // Merge vendor results
+            if (Array.isArray(vendorData[0])) {
+              vendorData[0].forEach(item => {
+                if (item.vendorname) {
+                  combined.push({
+                    label: item.vendorname,
+                    value: item.vendorname,
+                    user_id: item.vendor_id
+                  });
+                }
+              });
+            }
+    
+            // Filter combined array by the term:
+            const filtered = $.ui.autocomplete.filter(combined, request.term);
+    
+            response(filtered);
+          });
+        },
+        select: function (event, ui) {
+          $(selector).val(ui.item.label);
+          $(hiddenIdSelector).val(ui.item.user_id);
+          return false;
+        },
+        focus: function (event, ui) {
+          $(selector).val(ui.item.label);
+          return false;
+        }
+      })
+      .focus(function () {
+        // Show all matches on focus
+        $(this).autocomplete('search', this.value);
+      });
+    }
+    
+    // Initialize on your two fields:
+    combinedAutocomplete('#input-added-by',  '#input-added-user-id');
+    combinedAutocomplete('#input-edited-by', '#input-edited-user-id');
+</script>
+{#// --------------------------------------------------------------------------#}
+
+
 {{ footer }} 

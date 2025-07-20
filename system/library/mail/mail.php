@@ -11,8 +11,13 @@ class Mail {
 		$boundary = '----=_NextPart_' . md5(time());
 
 		$header  = 'MIME-Version: 1.0' . PHP_EOL;
+		$header .= 'Auto-Submitted: auto-generated' . PHP_EOL;
+        $header .= 'X-Auto-Response-Suppress: All' . PHP_EOL;
+        $header .= 'List-Unsubscribe: <mailto:' . $this->from . '>' . PHP_EOL;
+
 		$header .= 'Date: ' . date('D, d M Y H:i:s O') . PHP_EOL;
 		$header .= 'From: =?UTF-8?B?' . base64_encode($this->sender) . '?= <' . $this->from . '>' . PHP_EOL;
+		$header .= 'Message-ID: <' . md5(uniqid(time())) . '@' . $_SERVER['SERVER_NAME'] . '>' . PHP_EOL;
 		
 		if (!$this->reply_to) {
 			$header .= 'Reply-To: =?UTF-8?B?' . base64_encode($this->sender) . '?= <' . $this->from . '>' . PHP_EOL;
@@ -67,14 +72,20 @@ class Mail {
 			}
 		}
 
+		if (empty($this->text) && empty($this->html)) {
+			$this->text = "This email has no content.";
+		}
+		
+
 		$message .= '--' . $boundary . '--' . PHP_EOL;
 
 		ini_set('sendmail_from', $this->from);
 
 		if ($this->parameter) {
 			mail($to, '=?UTF-8?B?' . base64_encode($this->subject) . '?=', $message, $header, $this->parameter);
-		} else {
-			mail($to, '=?UTF-8?B?' . base64_encode($this->subject) . '?=', $message, $header);
-		}
+		} 
+		// else {
+		// 	mail($to, '=?UTF-8?B?' . base64_encode($this->subject) . '?=', $message, $header);
+		// }
 	}
 }

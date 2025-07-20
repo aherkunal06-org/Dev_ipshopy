@@ -75,6 +75,7 @@ class ControllerAccountPassword extends Controller {
 		$data['footer'] = $this->load->controller('common/footer');
 		$data['header'] = $this->load->controller('common/header');
 
+	$data['column_left_account'] = $this->load->controller('account/column_left_account');
 		$this->response->setOutput($this->load->view('account/password', $data));
 	}
 

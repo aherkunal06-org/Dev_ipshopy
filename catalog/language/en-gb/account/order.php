@@ -32,6 +32,21 @@ $_['column_action']         = 'Action';
 $_['column_date_added']     = 'Date Added';
 $_['column_status']         = 'Status';
 $_['column_comment']        = 'Comment';
+// added on 12-02-2025 by sagar 
+$_['column_track']        = 'Track order';
+// added on 16-02-2025 by sagar 
+$_['column_cancel']       = 'Cancel';
+$_['column_action']       = 'Action';
+$_['column_reorder']       = 'Reorder';
 
 // Error
 $_['error_reorder']         = '%s is not currently available to be reordered.';
+
+// Button labels
+$_['button_cancel']         = 'Cancel Order';
+// Error
+$_['text_order_cancelled']  = 'Your order has been successfully cancelled.';
+$_['text_order_cancel_failed'] = 'Unable to cancel the order. Please contact support if the problem persists.';
+
+// Custom Text
+$_['customer_cancel_order'] = 'Order Canceled By Customer';

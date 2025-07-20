@@ -3,7 +3,7 @@ class ControllerCheckoutPaymentMethod extends Controller {
 	public function index() {
 		$this->load->language('checkout/checkout');
 
-		if (isset($this->session->data['payment_address'])) {
+// 		if (isset($this->session->data['payment_address'])) {
 			// Totals
 			$totals = array();
 			$taxes = $this->cart->getTaxes();
@@ -73,7 +73,7 @@ class ControllerCheckoutPaymentMethod extends Controller {
 			array_multisort($sort_order, SORT_ASC, $method_data);
 
 			$this->session->data['payment_methods'] = $method_data;
-		}
+// 		}
 
 		if (empty($this->session->data['payment_methods'])) {
 			$data['error_warning'] = sprintf($this->language->get('error_no_payment'), $this->url->link('information/contact'));
@@ -120,8 +120,8 @@ class ControllerCheckoutPaymentMethod extends Controller {
 		} else {
 			$data['agree'] = '';
 		}
-
-		$this->response->setOutput($this->load->view('checkout/payment_method', $data));
+ 		return $this->load->view('checkout/payment_method', $data);
+// 		$this->response->setOutput($this->load->view('checkout/payment_method', $data));
 	}
 
 	public function save() {
@@ -180,6 +180,12 @@ class ControllerCheckoutPaymentMethod extends Controller {
 			$this->session->data['comment'] = strip_tags($this->request->post['comment']);
 		}
 
+// if($this->request->post['payment_address_id']){
+//     	echo '<pre>';
+// 		print_r($this->session->data);
+// 		echo '</pre>';
+// 		exit;
+// }
 		$this->response->addHeader('Content-Type: application/json');
 		$this->response->setOutput(json_encode($json));
 	}

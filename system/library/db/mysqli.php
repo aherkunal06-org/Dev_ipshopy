@@ -7,8 +7,11 @@ final class MySQLi {
 		$this->connection = new \mysqli($hostname, $username, $password, $database, $port);
 
 		if ($this->connection->connect_error) {
-			throw new \Exception('Error: ' . $this->connection->error . '<br />Error No: ' . $this->connection->errno);
+			throw new \Exception('Error: ' . $this->connection->error . '<br />Error No: ' . $this->connection->errno);	
 		}
+		
+		// ✅ Set timezone after successful connection
+		$this->connection->query("SET time_zone = '+05:30'");
 
 		$this->connection->set_charset("utf8");
 		$this->connection->query("SET SQL_MODE = ''");
@@ -24,7 +27,7 @@ final class MySQLi {
 				while ($row = $query->fetch_assoc()) {
 					$data[] = $row;
 				}
-
+                // $this->link->query("SET time_zone = '+05:30'");
 				$result = new \stdClass();
 				$result->num_rows = $query->num_rows;
 				$result->row = isset($data[0]) ? $data[0] : array();

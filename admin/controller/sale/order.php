@@ -85,6 +85,9 @@ class ControllerSaleOrder extends Controller {
 	}
 			
 	protected function getList() {
+	    
+	    $this->load->model('vendor/vendor');
+	    
 		if (isset($this->request->get['filter_order_id'])) {
 			$filter_order_id = $this->request->get['filter_order_id'];
 		} else {
@@ -96,7 +99,13 @@ class ControllerSaleOrder extends Controller {
 		} else {
 			$filter_customer = '';
 		}
-
+		
+		if (isset($this->request->get['filter_name'])) {
+			$filter_name = $this->request->get['filter_name'];
+		} else {
+			$filter_name = '';
+		}
+		
 		if (isset($this->request->get['filter_order_status'])) {
 			$filter_order_status = $this->request->get['filter_order_status'];
 		} else {
@@ -153,6 +162,10 @@ class ControllerSaleOrder extends Controller {
 
 		if (isset($this->request->get['filter_customer'])) {
 			$url .= '&filter_customer=' . urlencode(html_entity_decode($this->request->get['filter_customer'], ENT_QUOTES, 'UTF-8'));
+		}
+		
+		if (isset($this->request->get['filter_name'])) {
+			$url .= '&filter_name=' .  urlencode(html_entity_decode($this->request->get['filter_name'], ENT_QUOTES, 'UTF-8'));
 		}
 
 		if (isset($this->request->get['filter_order_status'])) {
@@ -217,22 +230,37 @@ class ControllerSaleOrder extends Controller {
 			'sort'                   => $sort,
 			'order'                  => $order,
 			'start'                  => ($page - 1) * $this->config->get('config_limit_admin'),
-			'limit'                  => $this->config->get('config_limit_admin')
+			'limit'                  => $this->config->get('config_limit_admin'),
+			'filter_name' => $filter_name
+
 		);
 
 		$order_total = $this->model_sale_order->getTotalOrders($filter_data);
 
 		$results = $this->model_sale_order->getOrders($filter_data);
+		
+		$this->load->model('sale/order');
 
 		foreach ($results as $result) {
+		     $vendors = $this->model_sale_order->getVendorsByOrderId($result['order_id']);
+             $vendor_names = array_column($vendors, 'vendor_name');
+    
 			$data['orders'][] = array(
 				'order_id'      => $result['order_id'],
 				'customer'      => $result['customer'],
+				'seller_name'  => $vendor_names,
 				'order_status'  => $result['order_status'] ? $result['order_status'] : $this->language->get('text_missing'),
 				'total'         => $this->currency->format($result['total'], $result['currency_code'], $result['currency_value']),
 				'date_added'    => date($this->language->get('date_format_short'), strtotime($result['date_added'])),
 				'date_modified' => date($this->language->get('date_format_short'), strtotime($result['date_modified'])),
 				'shipping_code' => $result['shipping_code'],
+				// added changes to show the estimated charges and label or track on 03-06-2025
+				'shipping_label' =>$result['shipping_label'],
+				'awbno' => $result['awbno'],
+				'estimated_courier_charges' =>$result['estimated_courier_charges'],
+				'estimated_net_settlement' =>$result['net_settlement'] ,
+				// ----------------------------------------------------------------------------
+				
 				'view'          => $this->url->link('sale/order/info', 'user_token=' . $this->session->data['user_token'] . '&order_id=' . $result['order_id'] . $url, true),
 				'edit'          => $this->url->link('sale/order/edit', 'user_token=' . $this->session->data['user_token'] . '&order_id=' . $result['order_id'] . $url, true)
 			);
@@ -268,6 +296,10 @@ class ControllerSaleOrder extends Controller {
 
 		if (isset($this->request->get['filter_customer'])) {
 			$url .= '&filter_customer=' . urlencode(html_entity_decode($this->request->get['filter_customer'], ENT_QUOTES, 'UTF-8'));
+		}
+		
+		if (isset($this->request->get['filter_name'])) {
+			$url .= '&filter_name=' . urlencode(html_entity_decode($this->request->get['filter_name'], ENT_QUOTES, 'UTF-8'));
 		}
 
 		if (isset($this->request->get['filter_order_status'])) {
@@ -316,6 +348,10 @@ class ControllerSaleOrder extends Controller {
 		if (isset($this->request->get['filter_customer'])) {
 			$url .= '&filter_customer=' . urlencode(html_entity_decode($this->request->get['filter_customer'], ENT_QUOTES, 'UTF-8'));
 		}
+		
+		if (isset($this->request->get['filter_name'])) {
+			$url .= '&filter_name=' . urlencode(html_entity_decode($this->request->get['filter_name'], ENT_QUOTES, 'UTF-8'));
+		}
 
 		if (isset($this->request->get['filter_order_status'])) {
 			$url .= '&filter_order_status=' . $this->request->get['filter_order_status'];
@@ -362,6 +398,8 @@ class ControllerSaleOrder extends Controller {
 		$data['filter_total'] = $filter_total;
 		$data['filter_date_added'] = $filter_date_added;
 		$data['filter_date_modified'] = $filter_date_modified;
+		$data['filter_name']  = $filter_name;
+
 
 		$data['sort'] = $sort;
 		$data['order'] = $order;
@@ -402,6 +440,9 @@ class ControllerSaleOrder extends Controller {
 	}
 		
 	public function getForm() {
+	    
+	    $this->load->model('vendor/vendor');
+	    
 		$data['text_form'] = !isset($this->request->get['order_id']) ? $this->language->get('text_add') : $this->language->get('text_edit');
 
 		$url = '';
@@ -412,6 +453,10 @@ class ControllerSaleOrder extends Controller {
 
 		if (isset($this->request->get['filter_customer'])) {
 			$url .= '&filter_customer=' . urlencode(html_entity_decode($this->request->get['filter_customer'], ENT_QUOTES, 'UTF-8'));
+		}
+		
+		if (isset($this->request->get['filter_name'])) {
+			$url .= '&filter_name=' . urlencode(html_entity_decode($this->request->get['filter_name'], ENT_QUOTES, 'UTF-8'));
 		}
 
 		if (isset($this->request->get['filter_order_status'])) {
@@ -709,6 +754,9 @@ class ControllerSaleOrder extends Controller {
 	}
 
 	public function info() {
+	    
+	    $this->load->model('vendor/vendor');
+	    
 		$this->load->model('sale/order');
 
 		if (isset($this->request->get['order_id'])) {
@@ -735,6 +783,10 @@ class ControllerSaleOrder extends Controller {
 
 			if (isset($this->request->get['filter_customer'])) {
 				$url .= '&filter_customer=' . urlencode(html_entity_decode($this->request->get['filter_customer'], ENT_QUOTES, 'UTF-8'));
+			}
+			
+			if (isset($this->request->get['filter_name'])) {
+				$url .= '&filter_name=' . urlencode(html_entity_decode($this->request->get['filter_name'], ENT_QUOTES, 'UTF-8'));
 			}
 
 			if (isset($this->request->get['filter_order_status'])) {
@@ -1493,6 +1545,19 @@ class ControllerSaleOrder extends Controller {
 		foreach ($orders as $order_id) {
 			$order_info = $this->model_sale_order->getOrder($order_id);
 
+	// ✅ GST ZONE LOGIC: check if vendor zone and customer shipping zone are same
+				$vendor_zone_id = $store_infos['zone_id']; // From vendor store
+				$shipping_zone_id = $order_info['shipping_zone_id']; // From customer shipping address
+
+				if ($vendor_zone_id == $shipping_zone_id) {
+					$gst_type = 'cgst_sgst'; // Same zone - apply CGST + SGST
+				} else {
+					$gst_type = 'igst'; // Different zones - apply IGST
+				}
+
+				$data['gst_type'] = $gst_type;
+
+		// ----------------------------------------------------
 			if ($order_info) {
 				$store_info = $this->model_setting_setting->getSetting('config', $order_info['store_id']);
 
@@ -1589,6 +1654,80 @@ class ControllerSaleOrder extends Controller {
 				$products = $this->model_sale_order->getOrderProducts($order_id);
 
 				foreach ($products as $product) {
+				    	// ------------hsn----------------------------------------------------------------------------------------------------------------------------------
+
+
+					$hsn_result = $this->db->query("SELECT hsn_code FROM " . DB_PREFIX . "product WHERE product_id = '" . (int)$product['product_id'] . "'");
+
+					if (!empty($hsn_result->row)) {
+						$hsn_code = $hsn_result->row['hsn_code'];
+					} else {
+						$hsn_code = '';
+					}
+		// ----------------------------------------------------------------------------------------------------------------------------------------------
+					
+
+					// -----------------------------------------------------------------------courier charges
+				// 	$courier_result = $this->db->query("SELECT courier_charges FROM " . DB_PREFIX . "order_product WHERE order_product_id = '" . (int)$product['order_product_id'] . "'");
+
+				if ($order_info['total_courier_charges']) {
+						$product['courier_charges'] = $order_info['total_courier_charges'];
+					}  else {
+						$product['courier_charges'] = 0.00;
+
+			
+					}
+				// 	var_dump($order_info);
+					// -----------------------------------------------------------------------courier charges
+
+					
+		// ------------------return policy----------------------------------------------------------------------------------------------------------------------------
+  
+					$return_policy_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "product_return_policy WHERE product_id = '" . (int)$product['product_id'] . "'");
+
+						if ($return_policy_query->num_rows) {
+							$return_duration_period = $return_policy_query->row['return_duration_period'];
+							$return_policy_details = $return_policy_query->row['return_policy_details'];
+						} else {
+							$return_duration_period = '-';
+							$return_policy_details = 'No Return Policy';
+						}
+
+					
+		// ----------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+		// ---------------------warranty-------------------------------------------------------------------------------------------------------------------------
+
+					$warranty_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "product_warranty WHERE product_id = '" . (int)$product['product_id'] . "'");
+
+					if ($warranty_query->num_rows) {
+						$product['warranty_by'] = $warranty_query->row['warranty_by'];
+						$product['warranty_duration'] = $warranty_query->row['warranty_duration'];
+						$product['warranty_description'] = $warranty_query->row['description'];
+						$product['warranty'] = 1;
+						$product['No_warranty'] =null;
+					} else {
+						$product['warranty_by'] = '-';
+						$product['warranty_duration'] = '-';
+						$product['warranty_description'] = '-';
+						$product['warranty'] = 0;
+						$product['No_warranty'] = 'No Warranty';
+					
+					}
+		// ----------------------------------------------------------------------------------------------------------------------------------------------
+                //  for vendor signatures 18-06-2025
+                $product['signature'] = isset($order_info['vendor_signatures'][$product['product_id']]) 
+            	? $order_info['vendor_signatures'][$product['product_id']] 
+            	: '';
+            
+            
+            
+
+
+            //     // ------------========
+
 					$option_data = array();
 
 					$options = $this->model_sale_order->getOrderOptions($order_id, $product['order_product_id']);
@@ -1612,14 +1751,73 @@ class ControllerSaleOrder extends Controller {
 						);
 					}
 
+					$hsn_result = $this->db->query("SELECT hsn_code, gst_rate FROM " . DB_PREFIX . "product WHERE product_id = '" . (int)$product['product_id'] . "'");
+					if (!empty($hsn_result->row)) {
+						$hsn_code = $hsn_result->row['hsn_code'];
+						$gst_rate = (float)$hsn_result->row['gst_rate'];
+					} else {
+						$hsn_code = '';
+						$gst_rate = 18.00; // default if not set
+					}
+					
+					// Product base values
+					$price = (float)$product['price'];
+					$quantity = (int)$product['quantity'];
+					$courier_charges = isset($product['courier_charges']) ? (float)$product['courier_charges'] : 0.00;
+					
+					// GST calculations
+					$rate = $gst_rate > 0 ? $gst_rate : 18.00;
+					$gst_amount = ($rate * $price * $quantity) / 100;
+					
+					if ($gst_type == 'cgst_sgst') {
+						$cgst = $gst_amount / 2;
+						$sgst = $gst_amount / 2;
+						$igst = 0.00;
+					} else {
+						$cgst = 0.00;
+						$sgst = 0.00;
+						$igst = $gst_amount;
+					}
+					$price=$price-($gst_amount/$quantity);
+					// Total = base price * qty + GST + courier
+					$total_price = ($price * $quantity) + $gst_amount + $courier_charges;
+					
 					$product_data[] = array(
 						'name'     => $product['name'],
 						'model'    => $product['model'],
-						'option'   => $option_data,
-						'quantity' => $product['quantity'],
-						'price'    => $this->currency->format($product['price'] + ($this->config->get('config_tax') ? $product['tax'] : 0), $order_info['currency_code'], $order_info['currency_value']),
-						'total'    => $this->currency->format($product['total'] + ($this->config->get('config_tax') ? ($product['tax'] * $product['quantity']) : 0), $order_info['currency_code'], $order_info['currency_value'])
+						'quantity' => $quantity,
+						'price'    => $this->currency->format($price, $order_info['currency_code'], $order_info['currency_value']),
+						'total'    => $this->currency->format($total_price, $order_info['currency_code'], $order_info['currency_value']),
+						'signature' => $product['signature'],
+						'hsn_code' => $hsn_code,
+						'gst_rate' => $rate,
+					
+						// Raw GST values
+						'cgst'     => $cgst,
+						'sgst'     => $sgst,
+						'igst'     => $igst,
+					
+						// Formatted GST values
+						'cgst_formatted' => $this->currency->format($cgst, $order_info['currency_code'], $order_info['currency_value']),
+						'sgst_formatted' => $this->currency->format($sgst, $order_info['currency_code'], $order_info['currency_value']),
+						'igst_formatted' => $this->currency->format($igst, $order_info['currency_code'], $order_info['currency_value']),
+						
+						// Courier Charges
+						'courier_charges' => $this->currency->format($courier_charges, $order_info['currency_code'], $order_info['currency_value']),
+					
+						// ✅ Return Policy
+						'return_duration_period' => $return_duration_period,
+						'return_policy_details' => $return_policy_details,
+					
+						// ✅ Warranty
+						'warranty_by' => $product['warranty_by'],
+						'warranty_duration' => $product['warranty_duration'],
+						'warranty_description' => $product['warranty_description'],
+						'warranty'=>$product['warranty'],
+						'No_warranty'=>$product['No_warranty']
 					);
+					
+
 				}
 
 				$voucher_data = array();
@@ -1841,4 +2039,5 @@ class ControllerSaleOrder extends Controller {
 
 		$this->response->setOutput($this->load->view('sale/order_shipping', $data));
 	}
+
 }

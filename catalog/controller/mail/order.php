@@ -1,5 +1,6 @@
 <?php
 class ControllerMailOrder extends Controller {
+    
 	public function index(&$route, &$args) {
 		if (isset($args[0])) {
 			$order_id = $args[0];
@@ -193,39 +194,197 @@ class ControllerMailOrder extends Controller {
 		// Products
 		$data['products'] = array();
 
-		foreach ($order_products as $order_product) {
-			$option_data = array();
+// 		foreach ($order_products as $order_product) {
+// 			$option_data = array();
 
-			$order_options = $this->model_checkout_order->getOrderOptions($order_info['order_id'], $order_product['order_product_id']);
+// 			$order_options = $this->model_checkout_order->getOrderOptions($order_info['order_id'], $order_product['order_product_id']);
 
-			foreach ($order_options as $order_option) {
-				if ($order_option['type'] != 'file') {
-					$value = $order_option['value'];
-				} else {
-					$upload_info = $this->model_tool_upload->getUploadByCode($order_option['value']);
+// 			foreach ($order_options as $order_option) {
+// 				if ($order_option['type'] != 'file') {
+// 					$value = $order_option['value'];
+// 				} else {
+// 					$upload_info = $this->model_tool_upload->getUploadByCode($order_option['value']);
 
-					if ($upload_info) {
-						$value = $upload_info['name'];
-					} else {
-						$value = '';
-					}
-				}
+// 					if ($upload_info) {
+// 						$value = $upload_info['name'];
+// 					} else {
+// 						$value = '';
+// 					}
+// 				}
 
-				$option_data[] = array(
-					'name'  => $order_option['name'],
-					'value' => (utf8_strlen($value) > 20 ? utf8_substr($value, 0, 20) . '..' : $value)
-				);
-			}
+// 				$option_data[] = array(
+// 					'name'  => $order_option['name'],
+// 					'value' => (utf8_strlen($value) > 20 ? utf8_substr($value, 0, 20) . '..' : $value)
+// 				);
+// 			}
+			
+// // 			// added at 17-06-2025 for hsn code =====---------------
+// //             $hsn_result = $this->db->query("SELECT hsn_code, gst_rate FROM " . DB_PREFIX . "product WHERE product_id = '" . (int)$product['product_id'] . "'");
+// // 					if (!empty($hsn_result->row)) {
+// // 						$hsn_code = $hsn_result->row['hsn_code'];
+// // 						$gst_rate = (float)$hsn_result->row['gst_rate'];
+// // 					} else {
+// // 						$hsn_code = '';
+// // 						$gst_rate = 18.00; // default if not set
+// // 					}
+// //             // ==========-------------============
+// //             // -----------------------------------------------------------------------courier charges
+// // 				// 	$courier_result = $this->db->query("SELECT courier_charges FROM " . DB_PREFIX . "order_product WHERE order_product_id = '" . (int)$product['order_product_id'] . "'");
 
-			$data['products'][] = array(
-				'name'     => $order_product['name'],
-				'model'    => $order_product['model'],
-				'option'   => $option_data,
-				'quantity' => $order_product['quantity'],
-				'price'    => $this->currency->format($order_product['price'] + ($this->config->get('config_tax') ? $order_product['tax'] : 0), $order_info['currency_code'], $order_info['currency_value']),
-				'total'    => $this->currency->format($order_product['total'] + ($this->config->get('config_tax') ? ($order_product['tax'] * $order_product['quantity']) : 0), $order_info['currency_code'], $order_info['currency_value'])
-			);
-		}
+// // 					if ($order_info['total_courier_charges']) {
+// // 						$product['courier_charges'] = $order_info['total_courier_charges'];
+// // 					}  else {
+// // 						$product['courier_charges'] = 0.00;
+
+			
+// // 					}
+// // 					// -----------------------------------------------------------------------courier charges
+            
+// //         	// Product base values
+// // 				$price = (float)$product['price'];
+// // 				$quantity = (int)$product['quantity'];
+// // 				$courier_charges = isset($product['courier_charges']) ? (float)$product['courier_charges'] : 0.00;
+            
+// //             // GST calculations
+// // 					$rate = $gst_rate > 0 ? $gst_rate : 18.00;
+// // 					$gst_amount = ($rate * $price * $quantity) / 100;
+					
+// // 					if ($gst_type == 'cgst_sgst') {
+// // 						$cgst = $gst_amount / 2;
+// // 						$sgst = $gst_amount / 2;
+// // 						$igst = 0.00;
+// // 					} else {
+// // 						$cgst = 0.00;
+// // 						$sgst = 0.00;
+// // 						$igst = $gst_amount;
+// // 					}
+            
+            	
+                   	
+					
+// //                    $price=$price-($gst_amount/$quantity);
+// // 					// Total = base price * qty + GST + courier
+// // 					$total_price = ($price * $quantity) + $gst_amount + $courier_charges;
+				
+
+// 			$data['products'][] = array(
+// 				'name'     => $order_product['name'],
+// 				'model'    => $order_product['model'],
+// 				'option'   => $option_data,
+// 				'quantity' => $order_product['quantity'],
+// 				// 'hsn_code' => $hsn_code,
+// 				// 'gst_rate' => $rate,
+// 				// 'gst'=>$gst_amount,
+// 				// // Courier Charges
+// 				// 'courier_charges' => $this->currency->format($courier_charges, $order_info['currency_code'], $order_info['currency_value']),
+				
+				
+// 				// // Raw GST values
+// 				// 'cgst'     => $cgst,
+// 				// 'sgst'     => $sgst,
+// 				// 'igst'     => $igst,
+			
+// 				// // Formatted GST values
+// 				// 'cgst_formatted' => $this->currency->format($cgst, $order_info['currency_code'], $order_info['currency_value']),
+// 				// 'sgst_formatted' => $this->currency->format($sgst, $order_info['currency_code'], $order_info['currency_value']),
+// 				// 'igst_formatted' => $this->currency->format($igst, $order_info['currency_code'], $order_info['currency_value']),
+			
+				
+// 			 //   'price'    => $this->currency->format($price, $order_info['currency_code'], $order_info['currency_value']),
+// 				// 'total'    => $this->currency->format($total_price, $order_info['currency_code'], $order_info['currency_value'])
+// 				'price'    => $this->currency->format($order_product['price'] + ($this->config->get('config_tax') ? $order_product['tax'] : 0), $order_info['currency_code'], $order_info['currency_value']),
+// 				'total'    => $this->currency->format($order_product['total'] + ($this->config->get('config_tax') ? ($order_product['tax'] * $order_product['quantity']) : 0), $order_info['currency_code'], $order_info['currency_value'])
+// 			);
+// 		}
+
+        foreach ($order_products as $order_product) {
+            $option_data = array();
+            $order_options = $this->model_checkout_order->getOrderOptions($order_info['order_id'], $order_product['order_product_id']);
+        
+            foreach ($order_options as $order_option) {
+                if ($order_option['type'] != 'file') {
+                    $value = $order_option['value'];
+                } else {
+                    $upload_info = $this->model_tool_upload->getUploadByCode($order_option['value']);
+                    $value = $upload_info ? $upload_info['name'] : '';
+                }
+        
+                $option_data[] = array(
+                    'name'  => $order_option['name'],
+                    'value' => (utf8_strlen($value) > 20 ? utf8_substr($value, 0, 20) . '..' : $value)
+                );
+            }
+        
+            // HSN and GST
+            $hsn_result = $this->db->query("SELECT hsn_code, gst_rate FROM " . DB_PREFIX . "product WHERE product_id = '" . (int)$order_product['product_id'] . "'");
+            $hsn_code = $hsn_result->row['hsn_code'] ?? '';
+            $gst_rate = isset($hsn_result->row['gst_rate']) ? (float)$hsn_result->row['gst_rate'] : 18.00;
+        
+            // Return Policy
+            $return_policy_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "product_return_policy WHERE product_id = '" . (int)$order_product['product_id'] . "'");
+            $return_duration_period = $return_policy_query->row['return_duration_period'] ?? '-';
+            $return_policy_details = $return_policy_query->row['return_policy_details'] ?? 'No Return Policy';
+        
+            // Warranty
+            $warranty_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "product_warranty WHERE product_id = '" . (int)$order_product['product_id'] . "'");
+            $warranty_by = $warranty_query->row['warranty_by'] ?? '-';
+            $warranty_duration = $warranty_query->row['warranty_duration'] ?? '-';
+            $warranty_description = $warranty_query->row['description'] ?? '-';
+        
+            $warranty = $warranty_query->num_rows ? 1 : 0;
+            $no_warranty = $warranty ? null : 'No Warranty';
+        
+            // Courier Charges (optional per product or total from order)
+            $courier_charges = isset($order_info['total_courier_charges']) ? (float)$order_info['total_courier_charges'] : 0.00;
+        
+            // GST Calculation
+            $price = (float)$order_product['price'];
+            $quantity = (int)$order_product['quantity'];
+            $rate = $gst_rate;
+            $gst_amount = ($rate * $price * $quantity) / 100;
+        
+            $gst_type = isset($order_info['gst_type']) ? $order_info['gst_type'] : 'cgst_sgst';
+        
+            if ($gst_type == 'cgst_sgst') {
+                $cgst = $gst_amount / 2;
+                $sgst = $gst_amount / 2;
+                $igst = 0.00;
+            } else {
+                $cgst = 0.00;
+                $sgst = 0.00;
+                $igst = $gst_amount;
+            }
+        
+            $price -= ($gst_amount / $quantity);
+            $total_price = ($price * $quantity) + $gst_amount + $courier_charges;
+        
+            $data['products'][] = array(
+                'name'     => $order_product['name'],
+                'model'    => $order_product['model'],
+                'option'   => $option_data,
+                'quantity' => $quantity,
+                'hsn_code' => $hsn_code,
+                'gst_rate' => $rate,
+                'gst'=>$gst_amount,
+                'cgst'     => $cgst,
+                'sgst'     => $sgst,
+                'igst'     => $igst,
+                'cgst_formatted' => $this->currency->format($cgst, $order_info['currency_code'], $order_info['currency_value']),
+                'sgst_formatted' => $this->currency->format($sgst, $order_info['currency_code'], $order_info['currency_value']),
+                'igst_formatted' => $this->currency->format($igst, $order_info['currency_code'], $order_info['currency_value']),
+                'courier_charges' => $this->currency->format($courier_charges, $order_info['currency_code'], $order_info['currency_value']),
+                'return_duration_period' => $return_duration_period,
+                'return_policy_details' => $return_policy_details,
+                'warranty_by' => $warranty_by,
+                'warranty_duration' => $warranty_duration,
+                'warranty_description' => $warranty_description,
+                'warranty' => $warranty,
+                'no_warranty' => $no_warranty,
+                'price'    => $this->currency->format($price, $order_info['currency_code'], $order_info['currency_value']),
+                'total'    => $this->currency->format($total_price, $order_info['currency_code'], $order_info['currency_value'])
+            );
+        }
+
 
 		// Vouchers
 		$data['vouchers'] = array();
@@ -271,7 +430,7 @@ class ControllerMailOrder extends Controller {
 		$mail->setFrom($from);
 		$mail->setSender(html_entity_decode($order_info['store_name'], ENT_QUOTES, 'UTF-8'));
 		$mail->setSubject(html_entity_decode(sprintf($language->get('text_subject'), $order_info['store_name'], $order_info['order_id']), ENT_QUOTES, 'UTF-8'));
-		$mail->setHtml($this->load->view('mail/order_add', $data));
+		$mail->setHTML($this->load->view('mail/order_add', $data));
 		$mail->send();
 	}
 	
@@ -326,7 +485,7 @@ class ControllerMailOrder extends Controller {
 		$mail->setFrom($from);
 		$mail->setSender(html_entity_decode($order_info['store_name'], ENT_QUOTES, 'UTF-8'));
 		$mail->setSubject(html_entity_decode(sprintf($language->get('text_subject'), $order_info['store_name'], $order_info['order_id']), ENT_QUOTES, 'UTF-8'));
-		$mail->setText($this->load->view('mail/order_edit', $data));
+		$mail->setHTML($this->load->view('mail/order_edit', $data));
 		$mail->send();
 	}
 	
@@ -410,12 +569,67 @@ class ControllerMailOrder extends Controller {
 						'value' => (utf8_strlen($value) > 20 ? utf8_substr($value, 0, 20) . '..' : $value)
 					);					
 				}
+				
+				 // added at 14-06-2025 for hsn code
+            $hsn_result = $this->db->query("SELECT hsn_code, gst_rate FROM " . DB_PREFIX . "product WHERE product_id = '" . (int)$product['product_id'] . "'");
+					if (!empty($hsn_result->row)) {
+						$hsn_code = $hsn_result->row['hsn_code'];
+						$gst_rate = (float)$hsn_result->row['gst_rate'];
+					} else {
+						$hsn_code = '';
+						$gst_rate = 18.00; // default if not set
+					}
+            // ==========-------------============
+            // -----------------------------------------------------------------------courier charges
+				// 	$courier_result = $this->db->query("SELECT courier_charges FROM " . DB_PREFIX . "order_product WHERE order_product_id = '" . (int)$product['order_product_id'] . "'");
+
+					if ($order_info['total_courier_charges']) {
+						$product['courier_charges'] = $order_info['total_courier_charges'];
+					}  else {
+						$product['courier_charges'] = 0.00;
+
+			
+					}
+					// -----------------------------------------------------------------------courier charges
+            
+        	// Product base values
+				$price = (float)$product['price'];
+				$quantity = (int)$product['quantity'];
+				$courier_charges = isset($product['courier_charges']) ? (float)$product['courier_charges'] : 0.00;
+            
+            // GST calculations
+					$rate = $gst_rate > 0 ? $gst_rate : 18.00;
+					$gst_amount = ($rate * $price * $quantity) / 100;
+					
+					if ($gst_type == 'cgst_sgst') {
+						$cgst = $gst_amount / 2;
+						$sgst = $gst_amount / 2;
+						$igst = 0.00;
+					} else {
+						$cgst = 0.00;
+						$sgst = 0.00;
+						$igst = $gst_amount;
+					}
+            
+            	
+                   	
+					
+                    $price=$price-($gst_amount/$quantity);
+					// Total = base price * qty + GST + courier
+					$total_price = ($price * $quantity) + $gst_amount + $courier_charges;
+				
+				
+				
 					
 				$data['products'][] = array(
 					'name'     => $order_product['name'],
 					'model'    => $order_product['model'],
 					'quantity' => $order_product['quantity'],
 					'option'   => $option_data,
+					'gst'=>$gst_amount,
+					// Courier Charges
+				// 	'courier_charges' => $this->currency->format($courier_charges, $order_info['currency_code'], $order_info['currency_value']),
+				// 	'total'    => $this->currency->format($total_price, $order_info['currency_code'], $order_info['currency_value'])
 					'total'    => html_entity_decode($this->currency->format($order_product['total'] + ($this->config->get('config_tax') ? ($order_product['tax'] * $order_product['quantity']) : 0), $order_info['currency_code'], $order_info['currency_value']), ENT_NOQUOTES, 'UTF-8')
 				);
 			}

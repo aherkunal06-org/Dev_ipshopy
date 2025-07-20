@@ -12,13 +12,13 @@ $_['text_order_detail']          = 'Order Details';
 $_['text_customer_detail']       = 'Customer Details';
 $_['text_option']                = 'Options';
 $_['text_store']                 = 'Store';
-$_['text_date_added']            = 'Date Added';
-$_['text_payment_method']        = 'Payment Method';
-$_['text_shipping_method']       = 'Shipping Method';
+$_['text_date_added']            = 'Date: ';
+$_['text_payment_method']        = 'Payment Method: ';
+$_['text_shipping_method']       = 'Shipping Method: ';
 $_['text_customer']              = 'Customer';
 $_['text_customer_group']        = 'Customer Group';
-$_['text_email']                 = 'E-Mail';
-$_['text_telephone']             = 'Telephone';
+$_['text_email']                 = 'E-Mail: ';
+$_['text_telephone']             = 'Mobile Number: ';
 $_['text_fax']                   = 'Fax';
 $_['text_invoice']               = 'Invoice';
 $_['text_reward']                = 'Reward Points';
@@ -79,6 +79,13 @@ $_['column_reference']           = 'Reference';
 $_['column_action']              = 'Action';
 $_['column_weight']              = 'Product Weight';
 
+//-- added the changes on the 03-06-2025
+$_['column_estimated_courier_charges'] = 'Estimated Courier Charges';
+$_['column_estimated_netsettlement'] = 'Estimated Net Settlement';
+$_['column_track_order'] = 'Track Order';
+$_['column_label'] = 'Label';
+
+
 // Entry
 $_['entry_store']                = 'Store';
 $_['entry_customer']             = 'Customer';
@@ -122,6 +129,8 @@ $_['entry_total']                = 'Total';
 $_['entry_date_added']           = 'Date Added';
 $_['entry_date_modified']        = 'Date Modified';
 
+// added the code for the show the seller name
+$_['seller_name']    = 'Seller Name';
 // Help
 $_['help_override']              = 'If the customers order is being blocked from changing the order status due to an anti-fraud extension enable override.';
 
@@ -130,3 +139,5 @@ $_['error_warning']              = 'Warning: Please check the form carefully for
 $_['error_permission']           = 'Warning: You do not have permission to modify orders!';
 $_['error_action']               = 'Warning: Could not complete this action!';
 $_['error_filetype']             = 'Invalid file type!';
+
+$_['entry_selername']        = 'Seller Name';

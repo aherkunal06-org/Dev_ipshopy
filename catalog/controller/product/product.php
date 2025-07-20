@@ -11,9 +11,13 @@ class ControllerProductProduct extends Controller {
 			'text' => $this->language->get('text_home'),
 			'href' => $this->url->link('common/home')
 		);
+		
+		if (!isset($this->request->get['_route_'])) {
+            $this->response->redirect($this->url->link('product/product', 'product_id=' . (int)$this->request->get['product_id'], true), 301);
+        }
+
 
 		$this->load->model('catalog/category');
-
 		if (isset($this->request->get['path'])) {
 			$path = '';
 
@@ -157,7 +161,20 @@ class ControllerProductProduct extends Controller {
 		$this->load->model('catalog/product');
 
 		$product_info = $this->model_catalog_product->getProduct($product_id);
+		// key highlight of the product 
+		$product_description = $this->model_catalog_product->getProductDescription($product_id);
+        $data['key_highlight'] = $product_description['key_highlight'] ?? '';
+		// faqs on the product page ---
+		$data['product_faqs'] = $this->model_catalog_product->getProductFaqs($product_id);
+        // 		warranty return replacement start 
+		
+		$data['replacement_policy'] = $this->model_catalog_product->getReplacementPolicyByProductId($product_id);
+		// $data['replacement_policy'] = $replacement_policy;
 
+		$data['product_warranty'] = $this->model_catalog_product->getWarrantyByProductId($product_id);
+		$data['product_return'] = $this->model_catalog_product->getReturnPolicyByProductId($product_id);
+			
+        // 	product warranty and return policy end
 		if ($product_info) {
 			$url = '';
 
@@ -211,13 +228,19 @@ class ControllerProductProduct extends Controller {
 
 			$data['breadcrumbs'][] = array(
 				'text' => $product_info['name'],
-				'href' => $this->url->link('product/product', $url . '&product_id=' . $this->request->get['product_id'])
+				// added on 10-06-2025 for canonical 
+				// 'href' => $this->url->link('product/product', $url . '&product_id=' . $this->request->get['product_id'])
+				'href' => $this->url->link('product/product', 'product_id=' . (int)$this->request->get['product_id'], true)
 			);
 
 			$this->document->setTitle($product_info['meta_title']);
 			$this->document->setDescription($product_info['meta_description']);
 			$this->document->setKeywords($product_info['meta_keyword']);
-			$this->document->addLink($this->url->link('product/product', 'product_id=' . $this->request->get['product_id']), 'canonical');
+			
+			// added on 10-06-2025 for canonical 
+            // $this->document->addLink($this->url->link('product/product', 'product_id=' . $this->request->get['product_id']), 'canonical');
+            // Force clean URL by removing query parameters for canonical
+            $this->document->addLink($this->url->link('product/product', 'product_id=' . (int)$this->request->get['product_id'], true), 'canonical');
 			$this->document->addScript('catalog/view/javascript/jquery/magnific/jquery.magnific-popup.min.js');
 			$this->document->addStyle('catalog/view/javascript/jquery/magnific/magnific-popup.css');
 			$this->document->addScript('catalog/view/javascript/jquery/datetimepicker/moment/moment.min.js');
@@ -240,7 +263,11 @@ class ControllerProductProduct extends Controller {
 			$data['model'] = $product_info['model'];
 			$data['reward'] = $product_info['reward'];
 			$data['points'] = $product_info['points'];
-			$data['description'] = html_entity_decode($product_info['description'], ENT_QUOTES, 'UTF-8');
+// 			$data['description'] = html_entity_decode($product_info['description'], ENT_QUOTES, 'UTF-8');
+			
+			$raw_description = html_entity_decode($product_info['description'], ENT_QUOTES, 'UTF-8');
+            $data['description'] = $this->fixBrokenHtmlTags($raw_description);
+
 
 			if ($product_info['quantity'] <= 0) {
 				$data['stock'] = $product_info['stock_status'];
@@ -253,13 +280,17 @@ class ControllerProductProduct extends Controller {
 			$this->load->model('tool/image');
 
 			if ($product_info['image']) {
-				$data['popup'] = $this->model_tool_image->resize($product_info['image'], $this->config->get('theme_' . $this->config->get('config_theme') . '_image_popup_width'), $this->config->get('theme_' . $this->config->get('config_theme') . '_image_popup_height'));
+			    
+				// $data['popup'] = $this->model_tool_image->resize($product_info['image'], $this->config->get('theme_' . $this->config->get('config_theme') . '_image_popup_width'), $this->config->get('theme_' . $this->config->get('config_theme') . '_image_popup_height'));
+				$data['popup'] = $this->model_tool_image->resize($product_info['image'], 1600,1600);
 			} else {
 				$data['popup'] = '';
 			}
 
 			if ($product_info['image']) {
-				$data['thumb'] = $this->model_tool_image->resize($product_info['image'], $this->config->get('theme_' . $this->config->get('config_theme') . '_image_thumb_width'), $this->config->get('theme_' . $this->config->get('config_theme') . '_image_thumb_height'));
+				// $data['thumb'] = $this->model_tool_image->resize($product_info['image'], $this->config->get('theme_' . $this->config->get('config_theme') . '_image_thumb_width'), $this->config->get('theme_' . $this->config->get('config_theme') . '_image_thumb_height'));
+				$data['thumb'] = $this->model_tool_image->resize($product_info['image'], 1600,1600);
+				
 			} else {
 				$data['thumb'] = '';
 			}
@@ -270,25 +301,43 @@ class ControllerProductProduct extends Controller {
 
 			foreach ($results as $result) {
 				$data['images'][] = array(
-					'popup' => $this->model_tool_image->resize($result['image'], $this->config->get('theme_' . $this->config->get('config_theme') . '_image_popup_width'), $this->config->get('theme_' . $this->config->get('config_theme') . '_image_popup_height')),
+				// 	'popup' => $this->model_tool_image->resize($result['image'], $this->config->get('theme_' . $this->config->get('config_theme') . '_image_popup_width'), $this->config->get('theme_' . $this->config->get('config_theme') . '_image_popup_height')),
+					'popup' => $this->model_tool_image->resize($result['image'], 1600,1600),
 					'thumb' => $this->model_tool_image->resize($result['image'], $this->config->get('theme_' . $this->config->get('config_theme') . '_image_additional_width'), $this->config->get('theme_' . $this->config->get('config_theme') . '_image_additional_height'))
 				);
 			}
 
 			if ($this->customer->isLogged() || !$this->config->get('config_customer_price')) {
-				$data['price'] = $this->currency->format($this->tax->calculate($product_info['price'], $product_info['tax_class_id'], $this->config->get('config_tax')), $this->session->data['currency']);
+				// $data['price'] = $this->currency->format($this->tax->calculate($product_info['price'], $product_info['tax_class_id'], $this->config->get('config_tax')), $this->session->data['currency']);
+                   $data['price'] = $this->tax->calculate( $product_info['price'], $product_info['tax_class_id'], $this->config->get('config_tax'));
 			} else {
 				$data['price'] = false;
 			}
 
-			if ((float)$product_info['special']) {
-				$data['special'] = $this->currency->format($this->tax->calculate($product_info['special'], $product_info['tax_class_id'], $this->config->get('config_tax')), $this->session->data['currency']);
+			if ((int)$product_info['special']) {
+				// $data['special'] = $this->currency->format($this->tax->calculate($product_info['special'], $product_info['tax_class_id'], $this->config->get('config_tax')), $this->session->data['currency']);
+				   $data['special'] = $this->tax->calculate($product_info['special'], $product_info['tax_class_id'], $this->config->get('config_tax'));
+
 			} else {
 				$data['special'] = false;
 			}
+			
+				// added by sagar - for discount price
+
+			if ((int)$product_info['special']) {
+				$discount_percentage = round((($product_info['price'] - $product_info['special']) / $product_info['price']) * 100);
+				$data['discount_percentage'] = $discount_percentage;
+			} else {
+				$data['discount_percentage'] = false;
+			}
+			// -----------------------------------------
+
+
 
 			if ($this->config->get('config_tax')) {
-				$data['tax'] = $this->currency->format((float)$product_info['special'] ? $product_info['special'] : $product_info['price'], $this->session->data['currency']);
+				// $data['tax'] = $this->currency->format((int)$product_info['special'] ? $product_info['special'] : $product_info['price'], $this->session->data['currency']);
+				   $data['tax'] = (int)$product_info['special'] ? $product_info['special'] : $product_info['price'];
+
 			} else {
 				$data['tax'] = false;
 			}
@@ -300,7 +349,9 @@ class ControllerProductProduct extends Controller {
 			foreach ($discounts as $discount) {
 				$data['discounts'][] = array(
 					'quantity' => $discount['quantity'],
-					'price'    => $this->currency->format($this->tax->calculate($discount['price'], $product_info['tax_class_id'], $this->config->get('config_tax')), $this->session->data['currency'])
+					'max_quantity' => $discount['max_quantity'],
+					'price'    => $this->tax->calculate($discount['price'], $product_info['tax_class_id'], $this->config->get('config_tax'))
+				// 	'price'    => $this->currency->format($this->tax->calculate($discount['price'], $product_info['tax_class_id'], $this->config->get('config_tax')), $this->session->data['currency'])
 				);
 			}
 
@@ -311,8 +362,9 @@ class ControllerProductProduct extends Controller {
 
 				foreach ($option['product_option_value'] as $option_value) {
 					if (!$option_value['subtract'] || ($option_value['quantity'] > 0)) {
-						if ((($this->config->get('config_customer_price') && $this->customer->isLogged()) || !$this->config->get('config_customer_price')) && (float)$option_value['price']) {
-							$price = $this->currency->format($this->tax->calculate($option_value['price'], $product_info['tax_class_id'], $this->config->get('config_tax') ? 'P' : false), $this->session->data['currency']);
+						if ((($this->config->get('config_customer_price') && $this->customer->isLogged()) || !$this->config->get('config_customer_price')) && (int)$option_value['price']) {
+							$price = $this->tax->calculate($option_value['price'], $product_info['tax_class_id'], $this->config->get('config_tax') ? 'P' : false);
+				// 			$price = $this->currency->format($this->tax->calculate($option_value['price'], $product_info['tax_class_id'], $this->config->get('config_tax') ? 'P' : false), $this->session->data['currency']);
 						} else {
 							$price = false;
 						}
@@ -358,6 +410,68 @@ class ControllerProductProduct extends Controller {
 			} else {
 				$data['customer_name'] = '';
 			}
+        if ($this->customer->isLogged() && isset($this->request->get['product_id'])) {
+            $this->load->model('catalog/review');
+            $existing_review = $this->model_catalog_review->getReviewByCustomerAndProduct(
+                $this->customer->getId(),
+                (int)$this->request->get['product_id']
+            );
+            $data['has_existing_review'] = $existing_review ? true : false;
+        } else {
+            $data['has_existing_review'] = false;
+        }
+                // review start 
+                
+
+if ($this->customer->isLogged()) {
+    $data['customer_name'] = $this->customer->getFirstName() . '&nbsp;' . $this->customer->getLastName();
+
+    // 🔥 Fetch existing review for this customer + product
+    $this->load->model('catalog/review');
+    $existing_review = $this->model_catalog_review->getReviewByCustomerAndProduct(
+        $this->customer->getId(),
+        (int)$this->request->get['product_id']
+    );
+
+    if ($existing_review) {
+        // ✅ Set existing review text
+        $data['customer_review_text'] = $existing_review['text'];
+        // ✅ Set existing rating
+        $data['customer_review_rating'] = $existing_review['rating'];
+
+        // ✅ Prepare existing images (with thumbnail URL + filename)
+        $existing_images = [];
+        $this->load->model('tool/image');
+        for ($i = 1; $i <= 5; $i++) {
+            $image_column = 'image' . $i;
+            if (!empty($existing_review[$image_column])) {
+                $filename = $existing_review[$image_column];
+                $thumb_url = $this->model_tool_image->resize('catalog/review/' . $filename, 90, 90);
+                $existing_images[] = [
+                    'url' => $thumb_url,
+                    'filename' => $filename
+                ];
+            }
+        }
+        $data['existing_review_images'] = $existing_images;
+    } else {
+        // No existing review -> empty data
+        $data['customer_review_text'] = '';
+        $data['customer_review_rating'] = '';
+        $data['existing_review_images'] = [];
+    }
+
+} else {
+    // Guest -> empty data
+    $data['customer_name'] = '';
+    $data['customer_review_text'] = '';
+    $data['customer_review_rating'] = '';
+    $data['existing_review_images'] = [];
+}
+
+
+
+                // review end 
 
 			$data['reviews'] = sprintf($this->language->get('text_reviews'), (int)$product_info['reviews']);
 			$data['rating'] = (int)$product_info['rating'];
@@ -372,6 +486,88 @@ class ControllerProductProduct extends Controller {
 			$data['share'] = $this->url->link('product/product', 'product_id=' . (int)$this->request->get['product_id']);
 
 			$data['attribute_groups'] = $this->model_catalog_product->getProductAttributes($this->request->get['product_id']);
+			
+            // --- added code changes for the pincode servicebility on 04-06-2025-------------------------------------------
+			// Get customer addresses for pincode checker
+		$data['addresses'] = array();
+        $data['default_address'] = array();
+        $data['default_postcode'] = '';
+        $data['is_logged'] = $this->customer->isLogged();
+        $data['profile'] = false;
+        $data['add_address'] = $this->url->link('account/address/add', '', true);
+
+        if ($data['is_logged']) {
+            $customer_id = (int)$this->customer->getId();
+
+        $data['profile'] = true;
+        
+        // Load required models
+        $this->load->model('account/address');
+        $this->load->model('account/customer');
+        
+        // Get all customer addresses
+        $data['addresses'] = $this->model_account_address->getAddresses();
+        
+        // Get the default address ID for the customer
+        $default_address_id = $this->customer->getAddressId();
+        $customerPincode = '';
+    
+        // Get customer default address
+        $customer_info = $this->model_account_customer->getCustomer($customer_id);
+    
+        // Check if the default address has a postcode
+        foreach ($data['addresses'] as $address) {
+            if ($address['address_id'] == $default_address_id && !empty($address['postcode'])) {
+                $customerPincode = $address['postcode'];
+                break;
+            }
+        }
+    
+        // If no default address with pincode, use the first address with a postcode
+        if (empty($customerPincode)) {
+            foreach ($data['addresses'] as $address) {
+                if (!empty($address['postcode'])) {
+                    $customerPincode = $address['postcode'];
+                    break;
+                }
+            }
+        }
+
+        // If no pincode is found, fall back to a model method (getCustomerPostcode)
+        if (empty($customerPincode)) {
+            $customerPincode = $this->model_catalog_product->getCustomerPostcode($customer_id);
+        }
+    
+        // Set the pincode for the drop-down UI
+        if ($customerPincode) {
+            $data['drop_pincode'] = $customerPincode;
+        }
+    
+        // Handle the default address and pincode display
+        if (!empty($customer_info) && !empty($customer_info['address_id'])) {
+            $default_address = $this->model_account_address->getAddress($customer_info['address_id']);
+    
+            if (!empty($default_address)) {
+                // Convert postcode to pincode for consistency in the template
+                $default_address['pincode'] = $default_address['postcode'];
+                $data['default_address'] = $default_address;
+                $data['default_postcode'] = $default_address['postcode'];
+    
+                // Debug logs to confirm data is being set correctly
+                $this->log->write('Default address set: ' . json_encode($data['default_address']));
+            }
+        }
+
+        // Load recent pincode history from session
+        $data['pincode_history'] = array();
+        if (isset($this->session->data['pincode_history']) && is_array($this->session->data['pincode_history'])) {
+            $data['pincode_history'] = $this->session->data['pincode_history'];
+        }
+     }
+
+        // Add further logic if needed to handle displaying pincode history or updates
+
+            // -------------------------------------------end here-------------------------------------------------------------------
 
 			$data['products'] = array();
 
@@ -385,19 +581,23 @@ class ControllerProductProduct extends Controller {
 				}
 
 				if ($this->customer->isLogged() || !$this->config->get('config_customer_price')) {
-					$price = $this->currency->format($this->tax->calculate($result['price'], $result['tax_class_id'], $this->config->get('config_tax')), $this->session->data['currency']);
+				// 	$price = $this->currency->format($this->tax->calculate($result['price'], $result['tax_class_id'], $this->config->get('config_tax')), $this->session->data['currency']);
+					$price = $this->tax->calculate($result['price'], $result['tax_class_id'], $this->config->get('config_tax'));
 				} else {
 					$price = false;
 				}
 
-				if ((float)$result['special']) {
-					$special = $this->currency->format($this->tax->calculate($result['special'], $result['tax_class_id'], $this->config->get('config_tax')), $this->session->data['currency']);
+				if ((int)$result['special']) {
+				// 	$special = $this->currency->format($this->tax->calculate($result['special'], $result['tax_class_id'], $this->config->get('config_tax')), $this->session->data['currency']);
+					$special = $this->tax->calculate($result['special'], $result['tax_class_id'], $this->config->get('config_tax'));
+
 				} else {
 					$special = false;
 				}
 
 				if ($this->config->get('config_tax')) {
-					$tax = $this->currency->format((float)$result['special'] ? $result['special'] : $result['price'], $this->session->data['currency']);
+				// 	$tax = $this->currency->format((int)$result['special'] ? $result['special'] : $result['price'], $this->session->data['currency']);
+					$tax = (int)$result['special'] ? $result['special'] : $result['price'];
 				} else {
 					$tax = false;
 				}
@@ -418,7 +618,7 @@ class ControllerProductProduct extends Controller {
 					'tax'         => $tax,
 					'minimum'     => $result['minimum'] > 0 ? $result['minimum'] : 1,
 					'rating'      => $rating,
-					'href'        => $this->url->link('product/product', 'product_id=' . $result['product_id'])
+					'href'        => $this->url->link('product/product', 'product_id=' . $result['product_id'], true)
 				);
 			}
 
@@ -446,6 +646,76 @@ class ControllerProductProduct extends Controller {
 			$data['footer'] = $this->load->controller('common/footer');
 			$data['header'] = $this->load->controller('common/header');
 
+        //faq starts
+        			$data['url_all_faqs'] = $this->url->link('product/product/faq', 'product_id=' . $product_id);
+        			$data['text_login2'] = sprintf($this->language->get('text_login2'), $this->url->link('account/login', '', true), $this->url->link('account/register', '', true));
+        //faq ends
+
+    	// check pincode availablity
+    
+			$this->load->model('account/customer');
+			// $customer_id = $this->model_account_customer->customer_id();
+			if ((int)$this->customer->getId()) {
+
+				$customerPincode = $this->model_catalog_product->getCustomerPostcode((int)$this->customer->getId());
+				$courierResult = $this->model_catalog_product->getCourierCharges($product_id, $customerPincode);
+				// $delivery_type = $courierResult['delivery_type'];
+				// $courier_charge = 
+				$data['courierCharges'] = $courierResult['courier_charge'];
+				$data['freeCharges'] = $courierResult['freeCharges'];
+				$data['customerPincode'] = $customerPincode;
+				$data['customerLogin'] = true;
+			} else {
+				$data['customerLogin'] = false;
+			}
+				$ProductFreeOn = $this->model_catalog_product->getProductFree($product_id);
+			$data['freeCharges'] = intval($ProductFreeOn);
+			
+            // 			var_dump($data);
+            // 			var_dump('customer login:-',$data['customerLogin'],'---customer_id: ',(int)$this->customer->getId(),'---courierCharges--',	$data['courierCharges']);
+            // end
+            if ($product_info) {
+				// Load variant data
+				$data['product_variants'] = $this->model_catalog_product->getProductsVariants($product_id);
+
+                    $resized_images = [];
+                    $this->load->model('tool/image');
+                foreach ($data['product_variants'] as &$variant) {
+                    // $images = explode(',', $variant['variant_image']);
+            
+                //   var_dump($variant['variant_image']);
+                    // $variant['image'] = $this->model_tool_image->resize($variant['variant_image'], 60, 60);
+                       $variant['image'] = $this->model_tool_image->resize($variant['variant_image'],60,60);
+         			// var_dump( $variant['variant_image']); 
+         			
+                }
+                    $data['variant_images'] = $resized_images;
+			}
+// 		referral and first time discount start
+			if ($this->customer->isLogged()) {
+			
+			$first_time_offer = $this->model_catalog_product->getActiveFirstTimeOffer($this->customer->getId());
+			$data['first_time_offer'] = $first_time_offer;
+		} else {
+			$data['first_time_offer'] = false;
+		}
+
+		//  Combined offer fetch and courier_charge/freeCharges initialization with status check
+// 		$this->setActiveOfferAndCourierData($data);
+
+		// Call the function before rendering the view
+		$this->setActiveOfferAndCourierData($data);
+
+		// Referral code tracking
+		if (isset($this->request->get['ref'])) {
+			$referral_code = $this->request->get['ref'];
+			$this->session->data['referral_code'] = $referral_code;
+			// Increment visit count for this referral code
+			$this->load->model('ipoffer/offer');
+			$this->model_ipoffer_offer->incrementReferralVisit($referral_code);
+		}
+// 		referral and first time discount end 
+        
 			$this->response->setOutput($this->load->view('product/product', $data));
 		} else {
 			$url = '';
@@ -518,9 +788,66 @@ class ControllerProductProduct extends Controller {
 
 			$this->response->setOutput($this->load->view('error/not_found', $data));
 		}
-	}
+		
+        // 		to display seller name on there product page 03-05-2025
+        		$product_id = isset($this->request->get['product_id']) ? (int)$this->request->get['product_id'] : 0;
+        		$vendors = $this->model_catalog_product->getVendorInfoByProductId($product_id);
+        		$data['vendor_info_list'] = $vendors;
+        		
+        // 		$data['currency'] = $this->session->data['currency'];
+		
+        // for product share on social media  added on 17-04-2025 by sagar
+		$data['product_url'] = $this->url->link('product/product', 'product_id=' . (int)$this->request->get['product_id']);
+        $this->response->setOutput($this->load->view('product/product', $data));
+        // end here 
+    	}
 
-	public function review() {
+        // 	public function review() {
+        // 		$this->load->language('product/product');
+        
+        // 		$this->load->model('catalog/review');
+        
+        // 		if (isset($this->request->get['page'])) {
+        // 			$page = $this->request->get['page'];
+        // 		} else {
+        // 			$page = 1;
+        // 		}
+        
+        // 		$data['reviews'] = array();
+        
+        // 		$review_total = $this->model_catalog_review->getTotalReviewsByProductId($this->request->get['product_id']);
+        
+        // 		$results = $this->model_catalog_review->getReviewsByProductId($this->request->get['product_id'], ($page - 1) * 5, 5);
+        
+        // 		foreach ($results as $result) {
+        		    
+        // 		  //  added for add link in review 
+        // 		    $text = html_entity_decode($result['text'], ENT_QUOTES, 'UTF-8');
+        		    
+        // 			$data['reviews'][] = array(
+        // 				'author'     => $result['author'],
+        // 				'text'       => nl2br($text),
+        // 				'rating'     => (int)$result['rating'],
+        // 				'date_added' => date($this->language->get('date_format_short'), strtotime($result['date_added']))
+        // 			);
+        // 		}
+        
+        // 		$pagination = new Pagination();
+        // 		$pagination->total = $review_total;
+        // 		$pagination->page = $page;
+        // 		$pagination->limit = 5;
+        // 		$pagination->url = $this->url->link('product/product/review', 'product_id=' . $this->request->get['product_id'] . '&page={page}');
+        
+        // 		$data['pagination'] = $pagination->render();
+        
+        // 		$data['results'] = sprintf($this->language->get('text_pagination'), ($review_total) ? (($page - 1) * 5) + 1 : 0, ((($page - 1) * 5) > ($review_total - 5)) ? $review_total : ((($page - 1) * 5) + 5), $review_total, ceil($review_total / 5));
+        
+        // 		$this->response->setOutput($this->load->view('product/review', $data));
+        // 	}
+
+        // Sheetal Madam Changes - 12/06/2025
+
+         public function review() {
 		$this->load->language('product/product');
 
 		$this->load->model('catalog/review');
@@ -535,14 +862,27 @@ class ControllerProductProduct extends Controller {
 
 		$review_total = $this->model_catalog_review->getTotalReviewsByProductId($this->request->get['product_id']);
 
+
 		$results = $this->model_catalog_review->getReviewsByProductId($this->request->get['product_id'], ($page - 1) * 5, 5);
 
 		foreach ($results as $result) {
+
+			    $images = [];
+
+        for ($i = 1; $i <= 5; $i++) {
+            if (!empty($result['image' . $i])) {
+                $images[] = 'image/catalog/review/' . $result['image' . $i];
+            }
+        }
+
 			$data['reviews'][] = array(
 				'author'     => $result['author'],
-				'text'       => nl2br($result['text']),
+				'text'       => $result['text'],
 				'rating'     => (int)$result['rating'],
-				'date_added' => date($this->language->get('date_format_short'), strtotime($result['date_added']))
+				'date_added' => date($this->language->get('date_format_short'), strtotime($result['date_added'])),
+				    // 'images'     => isset($result['images']) ? $result['images'] : []
+            'images'     => $images // Now correctly populated
+				
 			);
 		}
 
@@ -557,106 +897,527 @@ class ControllerProductProduct extends Controller {
 		$data['results'] = sprintf($this->language->get('text_pagination'), ($review_total) ? (($page - 1) * 5) + 1 : 0, ((($page - 1) * 5) > ($review_total - 5)) ? $review_total : ((($page - 1) * 5) + 5), $review_total, ceil($review_total / 5));
 
 		$this->response->setOutput($this->load->view('product/review', $data));
-	}
+	    }   
 
-	public function write() {
-		$this->load->language('product/product');
 
-		$json = array();
+        // public function write() {
+        //     $this->load->language('product/product');
+        //     $json = [];
+        
+        //     if ($this->request->server['REQUEST_METHOD'] == 'POST') {
+        //         // Validate name
+        //         if ((utf8_strlen($this->request->post['name']) < 3) || (utf8_strlen($this->request->post['name']) > 50)) {
+        //             $json['error'] = $this->language->get('error_name');
+        //         }
+        
+        //         // Validate review text
+        //         if ((utf8_strlen($this->request->post['text']) < 3) || (utf8_strlen($this->request->post['text']) > 1000)) {
+        //             $json['error'] = $this->language->get('error_text');
+        //         }
+        
+        // 		// Check for any word in the review text longer than 20 characters (without space)
+        //         if (preg_match('/\b\w{21,}\b/u', $this->request->post['text'])) {
+        //             $json['error'] = 'Invalid message: Words cannot exceed 20 characters.';
+        //         }
+            
+        
+        //         // Validate rating
+        //         if (empty($this->request->post['rating']) || $this->request->post['rating'] < 0 || $this->request->post['rating'] > 5) {
+        //             $json['error'] = $this->language->get('error_rating');
+        //         }
+    
+        // 		// ✅ Validate at least 2 images uploaded
+        //         if (!isset($this->request->files['review_images']) || count(array_filter($this->request->files['review_images']['name'])) < 2) {
+        //             $json['error'] = $this->language->get('error_images');
+        //         }
+     
+        //         // Captcha validation
+        //         if ($this->config->get('captcha_' . $this->config->get('config_captcha') . '_status') && in_array('review', (array)$this->config->get('config_captcha_page'))) {
+        //             $captcha = $this->load->controller('extension/captcha/' . $this->config->get('config_captcha') . '/validate');
+        //             if ($captcha) {
+        //                 $json['error'] = $captcha;
+        //             }
+        //         }
+        
+        //         // Continue only if no validation error
+        //         if (!isset($json['error'])) {
+        //             $this->load->model('catalog/review');
+        //             $image_paths = [];
+        
+        // 		if (isset($this->request->files['review_images'])) {
+        //         $review_image_dir = DIR_IMAGE . 'catalog/review/';
+        //         if (!is_dir($review_image_dir)) {
+        //             mkdir($review_image_dir, 0755, true);
+        //         }
+        
+        //         foreach ($this->request->files['review_images']['name'] as $key => $original_name) {
+        //             if (!empty($original_name)) {
+        //                 $file = [
+        //                     'name'     => $this->request->files['review_images']['name'][$key],
+        //                     'type'     => $this->request->files['review_images']['type'][$key],
+        //                     'tmp_name' => $this->request->files['review_images']['tmp_name'][$key],
+        //                     'error'    => $this->request->files['review_images']['error'][$key],
+        //                     'size'     => $this->request->files['review_images']['size'][$key]
+        //                 ];
+            
+        //                 $clean_name = basename($file['name']); // Remove path if any
+        //                 $ext = pathinfo($clean_name, PATHINFO_EXTENSION); // Get original extension
+        //                 $random_code = bin2hex(random_bytes(4)); // 8-character random string
+        //                 // $new_name = 'review_' . $random_code . '_' . $key . '.' . $ext;
+        //     			$new_name = 'review_' . $random_code . '_' . $key . '_' . $clean_name;
+            
+            
+        //                 $target_path = $review_image_dir . $new_name;
+            
+        //                 if (move_uploaded_file($file['tmp_name'], $target_path)) {
+        //                     $image_paths[] = $new_name;
+        //                 }
+        //             }
+        //         }
+        //     }
+        
+        //             //     $image_paths = array_slice($image_paths, 0, 5);
+        //             // }
+        
+        //             // Save review with image paths array
+        //             $this->model_catalog_review->addReview($this->request->get['product_id'], $this->request->post, $image_paths);
+        
+        //             $json['success'] = $this->language->get('text_success');
+        //         }
+        //     }
+        
+        //     $this->response->addHeader('Content-Type: application/json');
+        //     $this->response->setOutput(json_encode($json));
+        // }
+        
+public function write() {
+    $this->load->language('product/product');
+    $json = [];
 
-		if ($this->request->server['REQUEST_METHOD'] == 'POST') {
-			if ((utf8_strlen($this->request->post['name']) < 3) || (utf8_strlen($this->request->post['name']) > 25)) {
-				$json['error'] = $this->language->get('error_name');
-			}
+    if ($this->request->server['REQUEST_METHOD'] == 'POST') {
+        // ✅ Validate name
+        if ((utf8_strlen($this->request->post['name']) < 3) || (utf8_strlen($this->request->post['name']) > 25)) {
+            $json['error'] = $this->language->get('error_name');
+        }
 
-			if ((utf8_strlen($this->request->post['text']) < 25) || (utf8_strlen($this->request->post['text']) > 1000)) {
-				$json['error'] = $this->language->get('error_text');
-			}
+        // ✅ Validate review text
+        if ((utf8_strlen($this->request->post['text']) < 3) || (utf8_strlen($this->request->post['text']) > 1000)) {
+            $json['error'] = $this->language->get('error_text');
+        }
 
-			if (empty($this->request->post['rating']) || $this->request->post['rating'] < 0 || $this->request->post['rating'] > 5) {
-				$json['error'] = $this->language->get('error_rating');
-			}
+        // ✅ Check for words exceeding 20 characters
+        if (preg_match('/\b\w{21,}\b/u', $this->request->post['text'])) {
+            $json['error'] = 'Invalid message: Words cannot exceed 20 characters.';
+        }
 
-			// Captcha
-			if ($this->config->get('captcha_' . $this->config->get('config_captcha') . '_status') && in_array('review', (array)$this->config->get('config_captcha_page'))) {
-				$captcha = $this->load->controller('extension/captcha/' . $this->config->get('config_captcha') . '/validate');
+        // ✅ Validate rating
+        if (empty($this->request->post['rating']) || $this->request->post['rating'] < 0 || $this->request->post['rating'] > 5) {
+            $json['error'] = $this->language->get('error_rating');
+        }
 
-				if ($captcha) {
-					$json['error'] = $captcha;
-				}
-			}
+        $this->load->model('catalog/review');
+        $uploaded_images = [];
 
-			if (!isset($json['error'])) {
-				$this->load->model('catalog/review');
+        // ✅ Upload new images
+        if (isset($this->request->files['review_images'])) {
+            $review_image_dir = DIR_IMAGE . 'catalog/review/';
+            if (!is_dir($review_image_dir)) {
+                mkdir($review_image_dir, 0755, true);
+            }
 
-				$this->model_catalog_review->addReview($this->request->get['product_id'], $this->request->post);
+            foreach ($this->request->files['review_images']['name'] as $key => $original_name) {
+                if (!empty($original_name)) {
+                    $file = [
+                        'name'     => $this->request->files['review_images']['name'][$key],
+                        'type'     => $this->request->files['review_images']['type'][$key],
+                        'tmp_name' => $this->request->files['review_images']['tmp_name'][$key],
+                        'error'    => $this->request->files['review_images']['error'][$key],
+                        'size'     => $this->request->files['review_images']['size'][$key]
+                    ];
 
-				$json['success'] = $this->language->get('text_success');
-			}
-		}
+                    $clean_name = basename($file['name']);
+                    $random_code = bin2hex(random_bytes(4));
+                    $new_name = 'review_' . $random_code . '_' . $key . '_' . $clean_name;
+                    $target_path = $review_image_dir . $new_name;
 
-		$this->response->addHeader('Content-Type: application/json');
-		$this->response->setOutput(json_encode($json));
-	}
+                    if (move_uploaded_file($file['tmp_name'], $target_path)) {
+                        $uploaded_images[] = $new_name;
+                    }
+                }
+            }
+        }
 
-	public function getRecurringDescription() {
-		$this->load->language('product/product');
-		$this->load->model('catalog/product');
+        // ✅ Read kept existing images sent from hidden fields
+        $kept_existing_images = [];
+        if (isset($this->request->post['existing_images']) && is_array($this->request->post['existing_images'])) {
+            foreach ($this->request->post['existing_images'] as $filename) {
+                $kept_existing_images[] = basename($filename);
+            }
+        }
 
-		if (isset($this->request->post['product_id'])) {
-			$product_id = $this->request->post['product_id'];
-		} else {
-			$product_id = 0;
-		}
+        // ✅ Read deleted images from deleted_review_images[]
+        $deleted_images = [];
+        if (isset($this->request->post['deleted_review_images']) && is_array($this->request->post['deleted_review_images'])) {
+            foreach ($this->request->post['deleted_review_images'] as $filename) {
+                $deleted_images[] = basename($filename);
+            }
+        }
 
-		if (isset($this->request->post['recurring_id'])) {
-			$recurring_id = $this->request->post['recurring_id'];
-		} else {
-			$recurring_id = 0;
-		}
+        // ✅ Remove deleted images from kept_existing_images
+        if (!empty($deleted_images)) {
+            $kept_existing_images = array_diff($kept_existing_images, $deleted_images);
+        }
 
-		if (isset($this->request->post['quantity'])) {
-			$quantity = $this->request->post['quantity'];
-		} else {
-			$quantity = 1;
-		}
+        // ✅ Combine kept existing + new uploads
+        $final_images = array_merge($kept_existing_images, $uploaded_images);
 
-		$product_info = $this->model_catalog_product->getProduct($product_id);
-		
-		$recurring_info = $this->model_catalog_product->getProfile($product_id, $recurring_id);
+        // ✅ Validate combined images count
+        // if (!isset($json['error'])) {
+        //     if (count($final_images) < 2) {
+        //         $json['error'] = 'You must have at least 3 images total (existing + new).';
+        //     } elseif (count($final_images) > 5) {
+        //         $json['error'] = 'You can upload a maximum of 5 images.';
+        //     }
+        // }
 
-		$json = array();
 
-		if ($product_info && $recurring_info) {
-			if (!$json) {
-				$frequencies = array(
-					'day'        => $this->language->get('text_day'),
-					'week'       => $this->language->get('text_week'),
-					'semi_month' => $this->language->get('text_semi_month'),
-					'month'      => $this->language->get('text_month'),
-					'year'       => $this->language->get('text_year'),
-				);
 
-				if ($recurring_info['trial_status'] == 1) {
-					$price = $this->currency->format($this->tax->calculate($recurring_info['trial_price'] * $quantity, $product_info['tax_class_id'], $this->config->get('config_tax')), $this->session->data['currency']);
-					$trial_text = sprintf($this->language->get('text_trial_description'), $price, $recurring_info['trial_cycle'], $frequencies[$recurring_info['trial_frequency']], $recurring_info['trial_duration']) . ' ';
-				} else {
-					$trial_text = '';
-				}
-
-				$price = $this->currency->format($this->tax->calculate($recurring_info['price'] * $quantity, $product_info['tax_class_id'], $this->config->get('config_tax')), $this->session->data['currency']);
-
-				if ($recurring_info['duration']) {
-					$text = $trial_text . sprintf($this->language->get('text_payment_description'), $price, $recurring_info['cycle'], $frequencies[$recurring_info['frequency']], $recurring_info['duration']);
-				} else {
-					$text = $trial_text . sprintf($this->language->get('text_payment_cancel'), $price, $recurring_info['cycle'], $frequencies[$recurring_info['frequency']], $recurring_info['duration']);
-				}
-
-				$json['success'] = $text;
-			}
-		}
-
-		$this->response->addHeader('Content-Type: application/json');
-		$this->response->setOutput(json_encode($json));
-	}
+		if (!isset($json['error']) && count($final_images) > 5) {
+    $json['error'] = 'You can upload a maximum of 5 images.';
 }
+
+
+
+        // ✅ Captcha validation
+        if (!isset($json['error']) &&
+            $this->config->get('captcha_' . $this->config->get('config_captcha') . '_status') &&
+            in_array('review', (array)$this->config->get('config_captcha_page'))) {
+
+            $captcha = $this->load->controller('extension/captcha/' . $this->config->get('config_captcha') . '/validate');
+            if ($captcha) {
+                $json['error'] = $captcha;
+            }
+        }
+
+        if (!isset($json['error'])) {
+            $product_id = (int)$this->request->get['product_id'];
+
+            // ✅ Update or insert review
+            if ($this->customer->isLogged()) {
+                $customer_id = $this->customer->getId();
+                $existing_review = $this->model_catalog_review->getReviewByCustomerAndProduct($customer_id, $product_id);
+
+                if ($existing_review) {
+                    $this->model_catalog_review->updateReview($existing_review['review_id'], $this->request->post, $final_images);
+                } else {
+                    $this->model_catalog_review->addReview($product_id, $this->request->post, $final_images, $customer_id);
+                }
+            } else {
+                $this->model_catalog_review->addReview($product_id, $this->request->post, $final_images);
+            }
+
+            $json['success'] = $this->language->get('text_success');
+        }
+
+    } else {
+        // GET request: prefill existing review if logged in
+        if ($this->customer->isLogged()) {
+            $this->load->model('catalog/review');
+            $existing_review = $this->model_catalog_review->getReviewByCustomerAndProduct(
+                $this->customer->getId(),
+                (int)$this->request->get['product_id']
+            );
+
+            if ($existing_review) {
+                $existing_images = [];
+                $this->load->model('tool/image');
+                for ($i = 1; $i <= 5; $i++) {
+                    $image_column = 'image' . $i;
+                    if (!empty($existing_review[$image_column])) {
+                        $filename = $existing_review[$image_column];
+                        $thumb_url = $this->model_tool_image->resize('catalog/review/' . $filename, 90, 90);
+
+                        $existing_images[] = [
+                            'url' => $thumb_url,
+                            'filename' => $filename
+                        ];
+                    }
+                }
+                $json['existing_review_images'] = $existing_images;
+            } else {
+                $json['existing_review_images'] = [];
+            }
+        } else {
+            $json['existing_review_images'] = [];
+        }
+    }
+
+    $this->response->addHeader('Content-Type: application/json');
+    $this->response->setOutput(json_encode($json));
+}
+
+// review end 
+        
+
+    	public function getRecurringDescription() {
+    		$this->load->language('product/product');
+    		$this->load->model('catalog/product');
+    
+    		if (isset($this->request->post['product_id'])) {
+    			$product_id = $this->request->post['product_id'];
+    		} else {
+    			$product_id = 0;
+    		}
+    
+    		if (isset($this->request->post['recurring_id'])) {
+    			$recurring_id = $this->request->post['recurring_id'];
+    		} else {
+    			$recurring_id = 0;
+    		}
+    
+    		if (isset($this->request->post['quantity'])) {
+    			$quantity = $this->request->post['quantity'];
+    		} else {
+    			$quantity = 1;
+    		}
+    
+    		$product_info = $this->model_catalog_product->getProduct($product_id);
+    		
+    		$recurring_info = $this->model_catalog_product->getProfile($product_id, $recurring_id);
+    
+    		$json = array();
+    
+    		if ($product_info && $recurring_info) {
+    			if (!$json) {
+    				$frequencies = array(
+    					'day'        => $this->language->get('text_day'),
+    					'week'       => $this->language->get('text_week'),
+    					'semi_month' => $this->language->get('text_semi_month'),
+    					'month'      => $this->language->get('text_month'),
+    					'year'       => $this->language->get('text_year'),
+    				);
+    
+    				if ($recurring_info['trial_status'] == 1) {
+    				// 	$price = $this->currency->format($this->tax->calculate($recurring_info['trial_price'] * $quantity, $product_info['tax_class_id'], $this->config->get('config_tax')), $this->session->data['currency']);
+    					$price = $this->tax->calculate($recurring_info['trial_price'] * $quantity, $product_info['tax_class_id'], $this->config->get('config_tax'));
+    					$trial_text = sprintf($this->language->get('text_trial_description'), $price, $recurring_info['trial_cycle'], $frequencies[$recurring_info['trial_frequency']], $recurring_info['trial_duration']) . ' ';
+    				} else {
+    					$trial_text = '';
+    				}
+    
+    				// $price = $this->currency->format($this->tax->calculate($recurring_info['price'] * $quantity, $product_info['tax_class_id'], $this->config->get('config_tax')), $this->session->data['currency']);
+    				   $price = $this->tax->calculate($recurring_info['price'] * $quantity, $product_info['tax_class_id'], $this->config->get('config_tax'));
+    
+    
+    				if ($recurring_info['duration']) {
+    					$text = $trial_text . sprintf($this->language->get('text_payment_description'), $price, $recurring_info['cycle'], $frequencies[$recurring_info['frequency']], $recurring_info['duration']);
+    				} else {
+    					$text = $trial_text . sprintf($this->language->get('text_payment_cancel'), $price, $recurring_info['cycle'], $frequencies[$recurring_info['frequency']], $recurring_info['duration']);
+    				}
+    
+    				$json['success'] = $text;
+    			}
+    		}
+    
+    		$this->response->addHeader('Content-Type: application/json');
+    		$this->response->setOutput(json_encode($json));
+    	}
+	
+        // 	check pincode
+        public function checkPincode(){
+        
+        		$this->load->model('catalog/product');
+        		$json = [];
+        
+        		$product_id = isset($this->request->get['product_id']) ? (int)$this->request->get['product_id'] : 0;
+        		$pincode = isset($this->request->get['pincode']) ? $this->request->get['pincode'] : '';
+        
+        		if ($product_id && $pincode) {
+        			$this->load->model('vendor/product');
+        			$json['available'] = $this->model_vendor_product->checkProductAvailability($product_id, $pincode);
+        			
+                // var_dump($json['available']);
+                    
+        			if ($json['available']) {
+        				// $customerPincode = $this->model_catalog_product->getCustomerPostcode();
+        				$courierResult = $this->model_catalog_product->getCourierCharges($product_id, $pincode);
+        
+        				$json['courierCharges'] = $courierResult['courier_charge'];
+        				$json['freeCharges'] = $courierResult['freeCharges'];
+        			}
+        		} else {
+        			$json['available'] = false;
+        		}
+        		$this->response->addHeader('Content-Type: application/json');
+        		$this->response->setOutput(json_encode($json));
+        	}
+        	 // return_list page image 
+        	public function getProductByModel($model) {
+            $query = $this->db->query("SELECT * FROM " . DB_PREFIX . "product WHERE model = '" . $this->db->escape($model) . "' LIMIT 1");
+            return $query->row;
+        }
+        // review start
+        // review end 
+    
+    
+        //faq starts
+
+    	public function submitFaq() {
+        $json = [];
+    
+        if (!$this->customer->isLogged()) {
+            $json['error'] = 'You must be logged in to submit a question.';
+        } elseif ($this->request->server['REQUEST_METHOD'] == 'POST') {
+            $this->load->model('catalog/product');
+    
+            $product_id = (int)$this->request->post['product_id'];
+            $question = trim($this->request->post['question']);
+            $customer_id = (int)$this->customer->getId();
+            $language_id = (int)$this->config->get('config_language_id');
+    
+            if ($product_id && $question) {
+                $this->model_catalog_product->addProductFaq([
+                    'product_id' => $product_id,
+                    'customer_id' => $customer_id,
+                    'language_id' => $language_id,
+                    'question' => $question
+                ]);
+                $json['success'] = true;
+            } else {
+                $json['error'] = 'Missing data.';
+            }
+        } else {
+            $json['error'] = 'Invalid request method.';
+        }
+    
+        $this->response->addHeader('Content-Type: application/json');
+        $this->response->setOutput(json_encode($json));
+        }
+
+
+        public function faq() {
+            $this->load->language('product/product');
+            $this->load->model('catalog/product');
+        
+        	$this->load->language('product/product');
+        	
+        	
+            if (isset($this->request->get['product_id'])) {
+        		$product_id = (int)$this->request->get['product_id'];
+            } else {
+        		return $this->response->redirect($this->url->link('common/home'));
+            }
+        	
+        	$data['text_login2'] = sprintf($this->language->get('text_login2'), 
+        		$this->url->link('account/login', '', true),
+        		$this->url->link('account/register', '', true)
+        	);
+        	$data['product_id'] = $product_id; // make sure this is correct
+        	$data['logged'] = $this->customer->isLogged();
+            $product_info = $this->model_catalog_product->getProduct($product_id);
+        
+            if (!$product_info) {
+                return $this->response->redirect($this->url->link('common/home'));
+            }
+        
+            // Load image tool for thumbnail
+            $this->load->model('tool/image');
+        
+            $data['product'] = array(
+                'name'     => $product_info['name'],
+                'price'    => $this->currency->format($product_info['price'], $this->session->data['currency']),
+                'thumb'    => $product_info['image'] ? $this->model_tool_image->resize($product_info['image'], 200, 200) : '',
+                'href'     => $this->url->link('product/product', 'product_id=' . $product_id)
+            );
+        
+            // Load FAQs
+            $data['product_faqs'] = $this->model_catalog_product->getProductFaqs($product_id);
+        
+            $this->document->setTitle($product_info['name'] . ' - FAQs');
+            $data['heading_title'] = 'All FAQs for ' . $product_info['name'];
+        
+            $data['breadcrumbs'] = array(
+                array(
+                    'text' => $this->language->get('text_home'),
+                    'href' => $this->url->link('common/home')
+                ),
+                array(
+                    'text' => $product_info['name'],
+                    'href' => $this->url->link('product/product', 'product_id=' . $product_id)
+                ),
+                array(
+                    'text' => 'All FAQs',
+                    'href' => ''
+                )
+            );
+        
+        			$data['continue'] = $this->url->link('common/home');
+        
+        			$data['column_left'] = $this->load->controller('common/column_left');
+        			$data['column_right'] = $this->load->controller('common/column_right');
+        			$data['content_top'] = $this->load->controller('common/content_top');
+        			$data['content_bottom'] = $this->load->controller('common/content_bottom');
+        			$data['footer'] = $this->load->controller('common/footer');
+        			$data['header'] = $this->load->controller('common/header');
+            $this->response->setOutput($this->load->view('product/faq_list', $data));
+        }
+        //faq ends
+        
+        // added on 5-07-2025 for geolocation
+        public function getVendorPostcode() {
+            $this->load->model('catalog/product'); // Load model
+        
+            $json = array();
+        
+            if (isset($this->request->post['product_id'])) {
+                $product_id = (int)$this->request->post['product_id'];
+        
+                // Call model function to get postcode
+                $postcode = $this->model_catalog_product->getVendorPostcodeByProductId($product_id);
+        
+                if ($postcode) {
+                    $json['postcode'] = $postcode;
+                }
+            }
+        
+            // Return response as JSON
+            $this->response->addHeader('Content-Type: application/json');
+            $this->response->setOutput(json_encode($json));
+        }
+        protected function setActiveOfferAndCourierData(&$data)
+	{
+		// Fetch offer by offer_id from oc_ipoffer
+		$offer_id = 1; // Replace with dynamic value if needed
+		$this->load->model('catalog/product');
+		$offer = $this->model_catalog_product->getOfferById($offer_id);
+		// Only show offer if it exists and is enabled
+		if ($offer && isset($offer['status']) && $offer['status'] == 1) {
+			$data['active_offer'] = $offer;
+		} else {
+			$data['active_offer'] = false;
+		}
+		// Fix courier_charge and freeCharges undefined index
+		if (!isset($data['courier_charge'])) {
+			$data['courier_charge'] = '';
+		}
+		if (!isset($data['freeCharges'])) {
+			$data['freeCharges'] = '';
+		}
+	}
+	
+// 	description 
+private function fixBrokenHtmlTags($html) {
+    libxml_use_internal_errors(true);
+    $dom = new DOMDocument();
+
+    // This ensures UTF-8 is respected and unclosed tags are handled
+    $dom->loadHTML('<?xml encoding="utf-8" ?>' . $html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+
+    $fixedHtml = $dom->saveHTML();
+    libxml_clear_errors();
+    return $fixedHtml;
+}
+
+// description end 
+
+    }
