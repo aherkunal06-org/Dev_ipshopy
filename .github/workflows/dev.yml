@@ -23,6 +23,10 @@ jobs:
           sudo cp -rf ./* /var/www/html/dev.ipshopy/
           sudo cp -rf ./.htaccess /var/www/html/dev.ipshopy/ 2>/dev/null || true
 
+      - name: Prepare for Composer
+        run: |
+          sudo chown -R github:github /var/www/html/dev.ipshopy
+
       - name: Install Composer dependencies
         run: |
           cd /var/www/html/dev.ipshopy
