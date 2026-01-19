@@ -15,7 +15,7 @@ jobs:
 
       - name: Clean and setup deployment directory
         run: |
-          rm -rf /var/www/html/dev.ipshopy/*
+          rm -rf /var/www/html/dev.ipshopy/* 2>/dev/null || true
           mkdir -p /var/www/html/dev.ipshopy
           
       - name: Deploy files
@@ -98,12 +98,6 @@ jobs:
 
           // OpenCart API
           define("OPENCART_SERVER", "https://www.opencart.com/");' > /var/www/html/dev.ipshopy/admin/config.php
-
-      - name: Set permissions
-        run: |
-          chmod -R 755 /var/www/html/dev.ipshopy
-          chmod -R 777 /var/www/html/dev.ipshopy/storage_dev_ipshopy
-          chmod -R 777 /var/www/html/dev.ipshopy/image
 
       - name: Deployment complete
         run: |
