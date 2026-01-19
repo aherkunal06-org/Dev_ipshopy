@@ -22,7 +22,7 @@ jobs:
       - name: Create deployment directory
         run: |
           sudo mkdir -p /var/www/html/dev-ipshopy
-          sudo chown -R $USER:$USER /var/www/html/dev-ipshopy
+          sudo chown -R $github:$github /var/www/html/dev-ipshopy
 
       - name: Deploy files
         run: |
