@@ -15,7 +15,7 @@ jobs:
 
       - name: Setup deployment directory
         run: |
-          mkdir -p /var/www/html/dev-ipshopy
+          mkdir -p /var/www/html/dev.ipshopy
           
       - name: Deploy files
         run: |
@@ -25,27 +25,27 @@ jobs:
             --exclude 'storage_dev_ipshopy/logs/*' \
             --exclude 'storage_dev_ipshopy/cache/*' \
             --exclude 'storage_dev_ipshopy/session/*' \
-            ./ /var/www/html/dev-ipshopy/
+            ./ /var/www/html/dev.ipshopy/
 
       - name: Install Composer dependencies
         run: |
-          cd /var/www/html/dev-ipshopy
+          cd /var/www/html/dev.ipshopy
           composer install --no-dev --optimize-autoloader
 
       - name: Generate config.php
         run: |
           echo '<?php
           // HTTP
-          define("HTTP_SERVER", "http://localhost/dev-ipshopy/");
+          define("HTTP_SERVER", "http://localhost/dev.ipshopy/");
 
           // HTTPS
-          define("HTTPS_SERVER", "http://localhost/dev-ipshopy/");
+          define("HTTPS_SERVER", "http://localhost/dev.ipshopy/");
 
           // DIR
-          define("DIR_APPLICATION", "/var/www/html/dev-ipshopy/catalog/");
-          define("DIR_SYSTEM", "/var/www/html/dev-ipshopy/system/");
-          define("DIR_IMAGE", "/var/www/html/dev-ipshopy/image/");
-          define("DIR_STORAGE", "/var/www/html/dev-ipshopy/storage_dev_ipshopy/");
+          define("DIR_APPLICATION", "/var/www/html/dev.ipshopy/catalog/");
+          define("DIR_SYSTEM", "/var/www/html/dev.ipshopy/system/");
+          define("DIR_IMAGE", "/var/www/html/dev.ipshopy/image/");
+          define("DIR_STORAGE", "/var/www/html/dev.ipshopy/storage_dev_ipshopy/");
           define("DIR_LANGUAGE", DIR_APPLICATION . "language/");
           define("DIR_TEMPLATE", DIR_APPLICATION . "view/theme/");
           define("DIR_CONFIG", DIR_SYSTEM . "config/");
@@ -55,7 +55,6 @@ jobs:
           define("DIR_MODIFICATION", DIR_STORAGE . "modification/");
           define("DIR_SESSION", DIR_STORAGE . "session/");
           define("DIR_UPLOAD", DIR_STORAGE . "upload/");
-
           // DB
           define("DB_DRIVER", "mysqli");
           define("DB_HOSTNAME", "localhost");
@@ -63,25 +62,25 @@ jobs:
           define("DB_PASSWORD", "");
           define("DB_DATABASE", "dev_ipshopy");
           define("DB_PORT", "3306");
-          define("DB_PREFIX", "oc_");' > /var/www/html/dev-ipshopy/config.php
+          define("DB_PREFIX", "oc_");' > /var/www/html/dev.ipshopy/config.php
 
       - name: Generate admin/config.php
         run: |
           echo '<?php
           // HTTP
-          define("HTTP_SERVER", "http://localhost/dev-ipshopy/admin/");
-          define("HTTP_CATALOG", "http://localhost/dev-ipshopy/");
+          define("HTTP_SERVER", "http://localhost/dev.ipshopy/admin/");
+          define("HTTP_CATALOG", "http://localhost/dev.ipshopy/");
 
           // HTTPS
-          define("HTTPS_SERVER", "http://localhost/dev-ipshopy/admin/");
-          define("HTTPS_CATALOG", "http://localhost/dev-ipshopy/");
+          define("HTTPS_SERVER", "http://localhost/dev.ipshopy/admin/");
+          define("HTTPS_CATALOG", "http://localhost/dev.ipshopy/");
 
           // DIR
-          define("DIR_APPLICATION", "/var/www/html/dev-ipshopy/admin/");
-          define("DIR_SYSTEM", "/var/www/html/dev-ipshopy/system/");
-          define("DIR_IMAGE", "/var/www/html/dev-ipshopy/image/");
-          define("DIR_STORAGE", "/var/www/html/dev-ipshopy/storage_dev_ipshopy/");
-          define("DIR_CATALOG", "/var/www/html/dev-ipshopy/catalog/");
+          define("DIR_APPLICATION", "/var/www/html/dev.ipshopy/admin/");
+          define("DIR_SYSTEM", "/var/www/html/dev.ipshopy/system/");
+          define("DIR_IMAGE", "/var/www/html/dev.ipshopy/image/");
+          define("DIR_STORAGE", "/var/www/html/dev.ipshopy/storage_dev_ipshopy/");
+          define("DIR_CATALOG", "/var/www/html/dev.ipshopy/catalog/");
           define("DIR_LANGUAGE", DIR_APPLICATION . "language/");
           define("DIR_TEMPLATE", DIR_APPLICATION . "view/template/");
           define("DIR_CONFIG", DIR_SYSTEM . "config/");
@@ -102,15 +101,15 @@ jobs:
           define("DB_PREFIX", "oc_");
 
           // OpenCart API
-          define("OPENCART_SERVER", "https://www.opencart.com/");' > /var/www/html/dev-ipshopy/admin/config.php
+          define("OPENCART_SERVER", "https://www.opencart.com/");' > /var/www/html/dev.ipshopy/admin/config.php
 
       - name: Set permissions
         run: |
-          chmod -R 755 /var/www/html/dev-ipshopy
-          chmod -R 777 /var/www/html/dev-ipshopy/storage_dev_ipshopy
-          chmod -R 777 /var/www/html/dev-ipshopy/image
+          chmod -R 755 /var/www/html/dev.ipshopy
+          chmod -R 777 /var/www/html/dev.ipshopy/storage_dev_ipshopy
+          chmod -R 777 /var/www/html/dev.ipshopy/image
 
       - name: Deployment complete
         run: |
           echo "✅ Dev deployment complete!"
-          echo "🌐 Access at: http://localhost/dev-ipshopy/"
+          echo "🌐 Access at: http://localhost/dev.ipshopy/"
