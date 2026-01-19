@@ -3,31 +3,156 @@ class ControllerVendorVendor extends Controller
 {
 	private $error = array();
 
-	public function index()
-	{
+	public function index() {
 
 		if ($this->vendor->isLogged()) {
 			$this->response->redirect($this->url->link('vendor/success', '', true));
 		}
 
-		$this->load->language('vendor/vendor');
+		
 
-		$this->document->setTitle($this->language->get('heading_title'));
-
-
-		$this->load->model('vendor/vendor');
+        
+        // Handle AJAX request first to ensure proper JSON response
+		if ($this->request->server['REQUEST_METHOD'] == 'POST' && 
+			isset($this->request->server['HTTP_X_REQUESTED_WITH']) && 
+			$this->request->server['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest') {
+			
+			// Suppress any PHP warnings/notices that could corrupt JSON output
+			error_reporting(0);
+			ini_set('display_errors', 0);
+			
+			// Start output buffering to catch any stray output
+			ob_start();
+			
+			// Clear any existing output buffer
+			while (ob_get_level()) {
+				ob_end_clean();
+			}
+			
+			// Start fresh output buffer
+			ob_start();
+			
+			$this->response->addHeader('Content-Type: application/json');
+			
+			try {
+				// Load vendor model first
+				$this->load->model('vendor/vendor');
+				
+				// Map form fields to expected backend fields BEFORE validation
+				if (!empty($this->request->post['country']) && empty($this->request->post['country_id'])) {
+					$this->request->post['country_id'] = $this->request->post['country'];
+				}
+				if (!empty($this->request->post['zone']) && empty($this->request->post['zone_id'])) {
+					$this->request->post['zone_id'] = $this->request->post['zone'];
+				}
+				
+				if (!$this->validate()) {
+					error_log("[VendorRegistration] Validation failed: " . json_encode($this->error));
+					error_log("[VendorRegistration] POST data keys: " . json_encode(array_keys($this->request->post)));
+					
+					// Log specific missing fields
+					$required_fields = ['firstname', 'lastname', 'email', 'telephone', 'company', 'address_1', 'city', 'postcode', 'country_id', 'zone_id', 'password', 'confirm', 'agree'];
+					$missing_fields = [];
+					
+					foreach ($required_fields as $field) {
+						if (empty($this->request->post[$field])) {
+							$missing_fields[] = $field;
+						}
+					}
+					
+					error_log("[VendorRegistration] Missing required fields: " . json_encode($missing_fields));
+					
+					ob_clean();
+					$this->response->setOutput(json_encode([
+						'success' => false,
+						'error' => 'Validation failed',
+						'errors' => $this->error,
+						'missing_fields' => $missing_fields,
+						'debug_post_data' => array_keys($this->request->post)
+					]));
+					return;
+				}
+				
+				// Add registered_by field
+				$data = $this->request->post;
+				$data['registered_by'] = 'Self Registered';
+				
+				// Create vendor account with error handling
+				try {
+					$vendor_id = $this->model_vendor_vendor->addVendor($data);
+					
+					if (!$vendor_id) {
+						// Get the actual database error
+						$db_error = $this->db->error;
+						error_log("[VendorRegistration] Database error: " . $db_error);
+						
+						ob_clean();
+						$this->response->setOutput(json_encode([
+							'success' => false,
+							'error' => 'Database error: ' . $db_error
+						]));
+						return;
+					}
+				} catch (Exception $db_e) {
+					error_log("[VendorRegistration] Exception during addVendor: " . $db_e->getMessage());
+					ob_clean();
+					$this->response->setOutput(json_encode([
+						'success' => false,
+						'error' => 'Database exception: ' . $db_e->getMessage()
+					]));
+					return;
+				}
+				
+				$response_data = [
+					'success' => true,
+					'vendor_id' => $vendor_id,
+					'message' => 'Vendor registered successfully'
+				];
+				
+				// Google Ads integration is now handled separately via microservice
+				// The frontend will call googleAdsAutoCreate() endpoint after successful registration
+				
+				// Clean output buffer and send JSON
+				ob_clean();
+				$this->response->setOutput(json_encode($response_data));
+				return;
+				
+			} catch (Exception $e) {
+				error_log("[VendorRegistration] Exception: " . $e->getMessage());
+				// Clean output buffer and send JSON error
+				ob_clean();
+				$this->response->setOutput(json_encode([
+					'success' => false,
+					'error' => $e->getMessage()
+				]));
+				return;
+			}
+		}
 
 		if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validate()) {
-			// var_dump($this->request->post);
-			
-			// code to save the self regitered for vendor if registered self
+			// Add registered_by field
 			$data = $this->request->post;
 			$data['registered_by'] = 'Self Registered';
-			
-			$this->model_vendor_vendor->addVendor($data);
-			$this->vendor->login($this->request->post['email'], $this->request->post['password']);
-			$this->response->redirect($this->url->link('vendor/success'));
+		
+			try {
+				// Create vendor account
+				$vendor_id = $this->model_vendor_vendor->addVendor($data);
+				
+				// For regular form submission, proceed normally
+				// Login vendor
+				$this->vendor->login($this->request->post['email'], $this->request->post['password']);
+				$this->response->redirect($this->url->link('vendor/success', '', true));
+				
+			} catch (Exception $e) {
+				$this->error['warning'] = $e->getMessage();
+			}
 		}
+        
+        //---------- added code changes on 11-10-2025
+        $this->load->language('vendor/vendor');
+		$this->document->setTitle($this->language->get('heading_title'));
+		$this->load->model('vendor/vendor');
+        //------------- end here-------------------------------
 
 		$data['breadcrumbs'] = array();
 
@@ -750,8 +875,389 @@ $data['registration_video']= $this->load->controller('common/video_popup', ['vid
 		$this->response->setOutput($this->load->view('vendor/vendor', $data));
 	}
 
-	private function validate()
-	{
+// 	private function validate() {
+
+// 		$displayname =  $this->config->get('vendor_required_displayname');
+// 		$displaynamestatus =  $this->config->get('vendor_status_displayname');
+// 		if ($displaynamestatus == 1) {
+// 			if ($displayname == 1) {
+// 				if ((utf8_strlen(trim($this->request->post['display_name'])) < 3) || (utf8_strlen(trim($this->request->post['display_name'])) > 32)) {
+// 					$this->error['display_name'] = $this->language->get('error_display_name');
+// 				}
+// 			}
+// 		}
+
+// 		if ((utf8_strlen(trim($this->request->post['firstname'])) < 2) || (utf8_strlen(trim($this->request->post['firstname'])) > 32)) {
+// 			$this->error['firstname'] = $this->language->get('error_firstname');
+// 		}
+
+// // 		$lastnamestatus =  $this->config->get('vendor_status_lastname');
+// // 		$lastname =  $this->config->get('vendor_required_lastname');
+// // 		if ($lastnamestatus == 1) {
+// // 			if ($lastname == 1) {
+// // 				if ((utf8_strlen(trim($this->request->post['lastname'])) < 3) || (utf8_strlen(trim($this->request->post['lastname'])) > 12)) {
+// // 					$this->error['lastname'] = $this->language->get('error_lastname');
+// // 				}
+// // 			}
+// // 		}
+
+// 		$email_info = $this->model_vendor_vendor->getVendorByEmail($this->request->post['email']);
+
+// 		if (!isset($this->request->get['vendor_id'])) {
+// 			if ($email_info) {
+// 				$this->error['warning'] = $this->language->get('error_email_match');
+// 			}
+// 		} else {
+// 			if ($email_info && ($this->request->get['vendor_id'] != $email_info['vendor_id'])) {
+// 				$this->error['warning'] = $this->language->get('error_email_match');
+// 			}
+// 		}
+
+// // 		if ((utf8_strlen($this->request->post['email']) > 96) || !filter_var($this->request->post['email'], FILTER_VALIDATE_EMAIL)) {
+// // 			$this->error['email'] = $this->language->get('error_email');
+// // 		}
+
+//         $telephone_info = $this->model_vendor_vendor->getVendorByTelephone($this->request->post['telephone']);
+
+// 		if (!isset($this->request->get['vendor_id'])) {
+// 			if ($telephone_info) {
+// 				$this->error['warning'] = $this->language->get('error_telephone_match');
+// 			}
+// 		} else {
+// 			if ($telephone_info && ($this->request->get['vendor_id'] != $telephone_info['vendor_id'])) {
+// 				$this->error['warning'] = $this->language->get('error_telephone_match');
+// 			}
+// 		}
+
+// 		$telephonestatus =  $this->config->get('vendor_status_telephone');
+// 		$telephone =  $this->config->get('vendor_required_telephone');
+// 		if ($telephonestatus == 1) {
+// 			if ($telephone == 1) {
+// 				if ((utf8_strlen($this->request->post['telephone']) < 10) || (utf8_strlen($this->request->post['telephone']) > 10)) {
+// 					$this->error['telephone'] = $this->language->get('error_telephone');
+// 				}
+// 			}
+// 		}
+
+// 		$faxstatus =  $this->config->get('vendor_status_fax');
+// 		$fax =  $this->config->get('vendor_required_fax');
+// 		// if ($faxstatus == 1) {
+// 		// 	if ($fax == 1) {
+// 		// 		$gst_number = strtoupper($this->request->post['fax']);
+// 		// 		if ((utf8_strlen($this->request->post['fax']) != 15)) {
+// 		// 			$this->error['fax'] = $this->language->get('error_gstin');
+// 		// 		}
+// 		// 	}
+// 		// }
+		
+// // 		$gstin_info = $this->model_vendor_vendor->getVendorBygstin($this->request->post['fax']);
+
+// // 		if (!isset($this->request->get['vendor_id'])) {
+// // 			if ($gstin_info) {
+// // 				$this->error['warning'] = $this->language->get('error_gstin_match');
+// // 			}
+// // 		} else {
+// // 			if ($gstin_info && ($this->request->get['vendor_id'] != $gstin_info['vendor_id'])) {
+// // 				$this->error['warning'] = $this->language->get('error_gstin_match');
+// // 			}
+// // 		}
+
+//         if (isset($this->request->post['fax']) && !empty($this->request->post['fax'])) {
+		
+//     		$gstin_info = $this->model_vendor_vendor->getVendorBygstin($this->request->post['fax']);
+    
+//     		if (!isset($this->request->get['vendor_id'])) {
+//     			if ($gstin_info) {
+//     				$this->error['warning'] = $this->language->get('error_gstin_match');
+//     			}
+//     		} else {
+//     			if ($gstin_info && ($this->request->get['vendor_id'] != $gstin_info['vendor_id'])) {
+//     				$this->error['warning'] = $this->language->get('error_gstin_match');
+//     			}
+//     		}
+// 		}
+
+// 		$company =  $this->config->get('vendor_required_company');
+// 		$companystatus =  $this->config->get('vendor_status_company');
+// 		if ($companystatus == 1) {
+// 			if ($company == 1) {
+// 				if ((utf8_strlen($this->request->post['company']) > 255)) {
+// 					$this->error['company'] = $this->language->get('error_company');
+// 				}
+// 			}
+// 		}
+
+// // 		$address_1status =  $this->config->get('vendor_status_address_1');
+// // 		$address_1 =  $this->config->get('vendor_required_address_1');
+// // 		if ($address_1status == 1) {
+// // 			if ($address_1 == 1) {
+// // 				if ((utf8_strlen(trim($this->request->post['address_1'])) < 10) || (utf8_strlen(trim($this->request->post['address_1'])) > 40)) {
+// // 					$this->error['address_1'] = $this->language->get('error_address_1');
+// // 				}
+// // 			}
+// // 		}
+
+// // 		$address_2status =  $this->config->get('vendor_status_address_2');
+// // 		$address_2 =  $this->config->get('vendor_required_address_2');
+// // 		if ($address_2status == 1) {
+// // 			if ($address_2 == 1) {
+// // 				if ((utf8_strlen(trim($this->request->post['address_2'])) > 50)) {
+// // 					$this->error['address_2'] = $this->language->get('error_address_2');
+// // 				}
+// // 			}
+// // 		}
+
+// // 		$citystatus =  $this->config->get('vendor_status_city');
+// // 		$city =  $this->config->get('vendor_required_city');
+// // 		if ($citystatus == 1) {
+// // 			if ($city == 1) {
+// // 				if ((utf8_strlen(trim($this->request->post['city'])) < 3) || (utf8_strlen(trim($this->request->post['city'])) > 128)) {
+// // 					$this->error['city'] = $this->language->get('error_city');
+// // 				}
+// // 			}
+// // 		}
+
+// 		$this->load->model('localisation/country');
+// 		if (isset($this->request->post['country_id'])) {
+// 			$country_id = $this->request->post['country_id'];
+// 		} else {
+// 			$country_id = '';
+// 		}
+// 		$country_info = $this->model_localisation_country->getCountry($country_id);
+
+
+// 		// if ($this->request->post['country_id'] == '') {
+// 		// 	$this->error['country'] = $this->language->get('error_country');
+// 		// }
+
+// 		$zonestatus =  $this->config->get('vendor_status_zone');
+// 		$zone =  $this->config->get('vendor_required_zone');
+// 		// if ($zonestatus == 1) {
+// 		// 	if ($zone == 1) {
+// 		// 		if (!isset($this->request->post['zone_id']) || $this->request->post['zone_id'] == '' || !is_numeric($this->request->post['zone_id'])) {
+// 		// 			$this->error['zone'] = $this->language->get('error_zone');
+// 		// 		}
+// 		// 	}
+// 		// }
+
+
+// 		if ((utf8_strlen($this->request->post['password']) < 8) || (utf8_strlen($this->request->post['password']) > 20)) {
+// 			$this->error['password'] = $this->language->get('error_password');
+// 		}
+
+// 		if ($this->request->post['confirm'] != $this->request->post['password']) {
+// 			$this->error['confirm'] = $this->language->get('error_confirm');
+// 		}
+
+// 		$aboutstatus =  $this->config->get('vendor_status_about');
+// 		$about =  $this->config->get('vendor_required_about');
+// 		// if ($aboutstatus == 1) {
+// 		// 	if ($about == 1) {
+// 		// 		if ((utf8_strlen(trim($this->request->post['about'])) < 2) || (utf8_strlen(trim($this->request->post['about'])) > 1000)) {
+// 		// 			$this->error['about'] = $this->language->get('error_about');
+// 		// 		}
+// 		// 	}
+// 		// }
+
+
+// 		foreach ($this->request->post['store_description'] as $language_id => $value) {
+
+// 			if ((utf8_strlen($value['name']) < 3) || (utf8_strlen($value['name']) > 255)) {
+// 				$this->error['name'][$language_id] = $this->language->get('error_name');
+// 			}
+
+// 			$meta_description =  $this->config->get('vendor_required_meta_description');
+// 			$meta_descriptionstatus =  $this->config->get('vendor_status_meta_description');
+// 			// if ($meta_descriptionstatus == 1) {
+// 			// 	if ($meta_description == 1) {
+// 			// 		if ((utf8_strlen($value['meta_description']) < 3) || (utf8_strlen($value['meta_description']) > 500)) {
+// 			// 			$this->error['meta_description'][$language_id] = $this->language->get('error_meta_description');
+// 			// 		}
+// 			// 	}
+// 			// }
+
+// 			$description =  $this->config->get('vendor_required_description');
+// 			$descriptionstatus =  $this->config->get('vendor_status_description');
+// 			// if ($descriptionstatus == 1) {
+// 			// 	if ($description == 1) {
+// 			// 		if ((utf8_strlen($value['description']) < 3) || (utf8_strlen($value['description']) > 500)) {
+// 			// 			$this->error['description'][$language_id] = $this->language->get('error_description');
+// 			// 		}
+// 			// 	}
+// 			// }
+
+// 			$shipping_policy =  $this->config->get('vendor_required_shipping_policy');
+// 			$shipping_policystatus =  $this->config->get('vendor_status_shipping_policy');
+// 			// if ($shipping_policystatus == 1) {
+// 			// 	if ($shipping_policy == 1) {
+// 			// 		if ((utf8_strlen($value['shipping_policy']) < 3) || (utf8_strlen($value['shipping_policy']) > 500)) {
+// 			// 			$this->error['shipping_policy'][$language_id] = $this->language->get('error_shipping_policy');
+// 			// 		}
+// 			// 	}
+// 			// }
+
+// 			$return_policystatus =  $this->config->get('vendor_status_return_policy');
+// 			$return_policy =  $this->config->get('vendor_required_return_policy');
+// 			// if ($return_policystatus == 1) {
+// 			// 	if ($return_policy == 1) {
+// 			// 		if ((utf8_strlen($value['return_policy']) < 3) || (utf8_strlen($value['return_policy']) > 500)) {
+// 			// 			$this->error['return_policy'][$language_id] = $this->language->get('error_return_policy');
+// 			// 		}
+// 			// 	}
+// 			// }
+
+// 			$meta_keyword =  $this->config->get('vendor_required_meta_keyword');
+// 			$meta_keywordstatus =  $this->config->get('vendor_status_meta_keyword');
+// 			// if ($meta_keywordstatus == 1) {
+// 			// 	if ($meta_keyword == 1) {
+// 			// 		if ((utf8_strlen($value['meta_keyword']) < 3) || (utf8_strlen($value['meta_keyword']) > 500)) {
+// 			// 			$this->error['meta_keyword'][$language_id] = $this->language->get('error_meta_keyword');
+// 			// 		}
+// 			// 	}
+// 			// }
+// 		}
+
+// 		$bank_detail =  $this->config->get('vendor_required_bank_detail');
+// 		$bank_detailstatus =  $this->config->get('vendor_status_bank_detail');
+// 		if ($bank_detailstatus == 1) {
+// 			if ($bank_detail == 1) {
+// 				if ((utf8_strlen(trim($this->request->post['bank_detail'])) < 2) || (utf8_strlen(trim($this->request->post['bank_detail'])) > 1000)) {
+// 					$this->error['bank_detail'] = $this->language->get('error_bank_detail');
+// 				}
+// 			}
+// 		}
+
+// 		$storeabout =  $this->config->get('vendor_required_storeabout');
+// 		$storeaboutstatus =  $this->config->get('vendor_status_storeabout');
+// 		// if ($storeaboutstatus == 1) {
+// 		// 	if ($storeabout == 1) {
+// 		// 		if ((utf8_strlen(trim($this->request->post['store_about'])) < 2) || (utf8_strlen(trim($this->request->post['store_about'])) > 1000)) {
+// 		// 			$this->error['store_about'] = $this->language->get('error_store_about');
+// 		// 		}
+// 		// 	}
+// 		// }
+
+// 		$map_url =  $this->config->get('vendor_required_mapurl');
+// 		$map_urlstatus =  $this->config->get('vendor_status_mapurl');
+// 		// if ($map_urlstatus == 1) {
+// 		// 	if ($map_url == 1) {
+// 		// 		if ((utf8_strlen(trim($this->request->post['map_url'])) < 2) || (utf8_strlen(trim($this->request->post['map_url'])) > 1000)) {
+// 		// 			$this->error['map_url'] = $this->language->get('error_map_url');
+// 		// 		}
+// 		// 	}
+// 		// }
+
+
+// 		$tax_number =  $this->config->get('vendor_required_tax_number');
+// 		$tax_numberstatus =  $this->config->get('vendor_status_tax_number');
+// 		// if ($tax_numberstatus == 1) {
+// 		// 	if ($tax_number == 1) {
+// 		// 		if ((utf8_strlen(trim($this->request->post['tax_number'])) < 2) || (utf8_strlen(trim($this->request->post['tax_number'])) > 128)) {
+// 		// 			$this->error['tax_number'] = $this->language->get('error_tax_number');
+// 		// 		}
+// 		// 	}
+// 		// }
+
+// 		$shipping_charge =  $this->config->get('vendor_required_shipping_charge');
+// 		$shipping_chargestatus =  $this->config->get('vendor_status_shipping_charge');
+// 		// if ($shipping_chargestatus == 1) {
+// 		// 	if ($shipping_charge == 1) {
+// 		// 		if ((utf8_strlen(trim($this->request->post['tax_number'])) < 2) || (utf8_strlen(trim($this->request->post['shipping_charge'])) > 128)) {
+// 		// 			$this->error['shipping_charge'] = $this->language->get('error_shipping_charge');
+// 		// 		}
+// 		// 	}
+// 		// }
+
+
+// 		$statuspaypal = $this->config->get('vendor_status_paypal');
+// 		// if ($statuspaypal == 1) {
+// 		// 	if ($this->request->post['payment_method'] == 'paypal') {
+// 		// 		if ($this->request->post['paypal'] == '') {
+// 		// 			$this->error['paypal'] = $this->language->get('error_paypal');
+// 		// 		}
+// 		// 	} elseif ($this->request->post['payment_method'] == 'banktransfer') {
+// 		// 		if ($this->request->post['bank_account_name'] == '') {
+// 		// 			$this->error['bank_account_name'] = $this->language->get('error_bank_account_name');
+// 		// 		}
+
+// 		// 		if ($this->request->post['bank_account_number'] == '') {
+// 		// 			$this->error['bank_account_number'] = $this->language->get('error_bank_account_number');
+// 		// 		}
+// 		// 	}
+// 		// }
+
+// 		$chkpostcode =  $this->config->get('vendor_vpostcode');
+// 		$chkpostcodestatus =  $this->config->get('vendor_status_postcode');
+// 		if ($chkpostcodestatus == 1) {
+// 			if ($chkpostcode == 1) {
+// 				if (empty($this->request->post['postcode'])) {
+// 					$this->error['postcode'] = $this->language->get('error_postcode');
+// 				}
+// 			}
+// 		}
+// 		/* 24 03 2020 */
+// 		if ($this->error) {
+// // 			var_dump($this->error);
+// 			$this->error['filedwarning'] =  $this->language->get('error_filedwarning');
+// 		}
+// 		/* 24 03 2020 */
+
+// 		/* 10 04 2020 */
+
+// 		$vendor_vprivacy = $this->config->get('vendor_vprivacy_id');
+// 		if ($vendor_vprivacy != 0) {
+// 			if ($this->config->get('vendor_vprivacy_id')) {
+// 				$this->load->model('catalog/information');
+
+// 				$information_info = $this->model_catalog_information->getInformation($this->config->get('vendor_vprivacy_id'));
+
+// 				if ($information_info && !isset($this->request->post['agree'])) {
+// 					$this->error['warning'] = sprintf($this->language->get('error_agree'), $information_info['title']);
+// 				}
+// 			}
+// 		}
+// 		/* 10 04 2020 */
+
+// 		/* 05 02 2021 */
+// 		$vendorstatusurl = $this->config->get('vendor_status_url');
+// 		$vendorrequiredurl = $this->config->get('vendor_required_url');
+// 		if ($vendorstatusurl == 1) {
+// 			if ($vendorrequiredurl == 1) {
+// 				if ($this->request->post['vendor_seo_url']) {
+
+// 					$this->load->model('vendor/seo_url');
+
+// 					foreach ($this->request->post['vendor_seo_url'] as $store_id => $language) {
+// 						foreach ($language as $language_id => $keyword) {
+// 							if (!empty($keyword)) {
+// 								if (count(array_keys($language, $keyword)) > 1) {
+// 									$this->error['keyword'][$store_id][$language_id] = $this->language->get('error_unique');
+// 								}
+
+// 								$seo_urls = $this->model_vendor_seo_url->getSeoUrlsByKeyword($keyword);
+
+// 								foreach ($seo_urls as $seo_url) {
+// 									if (($seo_url['store_id'] == $store_id) && (!isset($this->request->get['vendor_id']) || (($seo_url['query'] != 'vendor_id=' . $this->request->get['vendor_id'])))) {
+// 										$this->error['keyword'][$store_id][$language_id] = $this->language->get('error_keyword');
+// 									}
+// 								}
+// 							}
+// 							if (empty($keyword)) {
+// 								$this->error['keyword'][$store_id][$language_id] = $this->language->get('error_srequired');
+// 							}
+// 						}
+// 					}
+// 				}
+// 			}
+// 		}
+
+// 		/* 05 02 2021 */
+
+// 		return !$this->error;
+// 	}
+
+    private function validate() {
+    $this->load->model('vendor/vendor');
 
 		$displayname =  $this->config->get('vendor_required_displayname');
 		$displaynamestatus =  $this->config->get('vendor_status_displayname');
@@ -838,20 +1344,24 @@ $data['registration_video']= $this->load->controller('common/video_popup', ['vid
 // 			}
 // 		}
 
-        if (isset($this->request->post['fax']) && !empty($this->request->post['fax'])) {
-		
-    		$gstin_info = $this->model_vendor_vendor->getVendorBygstin($this->request->post['fax']);
-    
-    		if (!isset($this->request->get['vendor_id'])) {
-    			if ($gstin_info) {
-    				$this->error['warning'] = $this->language->get('error_gstin_match');
-    			}
-    		} else {
-    			if ($gstin_info && ($this->request->get['vendor_id'] != $gstin_info['vendor_id'])) {
-    				$this->error['warning'] = $this->language->get('error_gstin_match');
-    			}
-    		}
-		}
+        // Skip GSTIN validation for AJAX requests (vendor registration)
+        if (!isset($this->request->server['HTTP_X_REQUESTED_WITH']) || 
+            $this->request->server['HTTP_X_REQUESTED_WITH'] != 'XMLHttpRequest') {
+            
+            if (isset($this->request->post['fax']) && !empty($this->request->post['fax'])) {
+                $gstin_info = $this->model_vendor_vendor->getVendorBygstin($this->request->post['fax']);
+        
+                if (!isset($this->request->get['vendor_id'])) {
+                    if ($gstin_info) {
+                        $this->error['warning'] = $this->language->get('error_gstin_match');
+                    }
+                } else {
+                    if ($gstin_info && ($this->request->get['vendor_id'] != $gstin_info['vendor_id'])) {
+                        $this->error['warning'] = $this->language->get('error_gstin_match');
+                    }
+                }
+            }
+        }
 
 		$company =  $this->config->get('vendor_required_company');
 		$companystatus =  $this->config->get('vendor_status_company');
@@ -1072,7 +1582,9 @@ $data['registration_video']= $this->load->controller('common/video_popup', ['vid
 			}
 		}
 		/* 24 03 2020 */
-		if ($this->error) {
+		// Skip filedwarning for AJAX requests (vendor registration)
+		if ($this->error && (!isset($this->request->server['HTTP_X_REQUESTED_WITH']) || 
+		    $this->request->server['HTTP_X_REQUESTED_WITH'] != 'XMLHttpRequest')) {
 // 			var_dump($this->error);
 			$this->error['filedwarning'] =  $this->language->get('error_filedwarning');
 		}
@@ -1131,9 +1643,9 @@ $data['registration_video']= $this->load->controller('common/video_popup', ['vid
 
 		return !$this->error;
 	}
+	
 
-	public function autocomplete()
-	{
+	public function autocomplete() {
 
 		if (isset($this->request->get['sort'])) {
 			$sort = $this->request->get['sort'];
@@ -1181,8 +1693,7 @@ $data['registration_video']= $this->load->controller('common/video_popup', ['vid
 		$this->response->setOutput(json_encode($json));
 	}
 
-	public function upload()
-	{
+	public function upload() {
 		$this->load->language('tool/upload');
 		$json = array();
 		if (!empty($this->request->files['file']['name']) && is_file($this->request->files['file']['tmp_name'])) {
@@ -1272,4 +1783,732 @@ $data['registration_video']= $this->load->controller('common/video_popup', ['vid
         }
     }
     
+
+
+     // nikita google ads auto create logic start -12/10/2025--------
+     
+
+
+     public function processGoogleAdsIntegration($data) {
+    // Call the microservice API instead of local function
+    $googleAdsServiceUrl = 'https://gads.ipshopy.com/api/google-ads/autoSetupGoogleAds';
+    
+    $apiData = array(
+        'vendorId' => $data['vendor_id'],
+        'email' => $data['email'],
+        'firstName' => $data['firstname'],
+        'lastName' => $data['lastname'],
+        'companyName' => $data['company'],
+        'phone' => $data['telephone']
+    );
+    
+    // Make API call to Google Ads service
+    $ch = curl_init($googleAdsServiceUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($apiData));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode == 200) {
+        $result = json_decode($response, true);
+        if ($result && isset($result['success']) && $result['success']) {
+            // Update vendor with Google Ads info
+            $this->model_vendor_vendor->updateVendorGoogleAdsInfo(
+                $data['vendor_id'],
+                $result['data']['customerId'],
+                'ACTIVE'
+            );
+            
+            $this->log->write('Google Ads account created for vendor: ' . $data['email']);
+            return true;
+        }
+    }
+    
+    $this->log->write('Failed to create Google Ads account for vendor: ' . $data['email']);
+    return false;
+}
+
+
+     public function googleAdsAutoCreate() {
+    $this->response->addHeader('Content-Type: application/json');
+    
+    if ($this->request->server['REQUEST_METHOD'] != 'POST') {
+        $this->response->setOutput(json_encode([
+            'success' => false,
+            'error' => 'Invalid request method'
+        ]));
+        return;
+    }
+    
+    $vendor_id = $this->request->post['vendor_id'] ?? null;
+    $company_name = $this->request->post['company_name'] ?? 'Unknown Company';
+    
+    if (!$vendor_id) {
+        $this->response->setOutput(json_encode([
+            'success' => false,
+            'error' => 'Vendor ID is required'
+        ]));
+        return;
+    }
+    
+    try {
+        // Load vendor model
+        $this->load->model('vendor/vendor');
+        
+        // Fetch full vendor data (FIX: This was missing)
+        $vendor_data = $this->model_vendor_vendor->getVendor($vendor_id);
+        
+        if (!$vendor_data) {
+            throw new Exception('Vendor not found');
+        }
+        
+        // Update vendor status to 'pending'
+        $this->model_vendor_vendor->updateGoogleAdsInfo($vendor_id, null, 'pending');
+        
+        // Prepare payload for microservice (using fetched vendor_data)
+        $api_url = 'https://gads.ipshopy.com/api/google-ads/autoSetupGoogleAds';
+        
+        $post_data = [
+            'vendorId' => $vendor_id,
+            'descriptiveName' => $company_name,
+            'currency_code' => 'INR',
+            'timeZone' => 'Asia/Kolkata',
+            'email' => $vendor_data['email'],
+            'firstName' => $vendor_data['firstname'],
+            'lastName' => $vendor_data['lastname'],
+            'phone' => $vendor_data['telephone'],
+            'address' => [
+                'address_1' => $vendor_data['address_1'],
+                'city' => $vendor_data['city'],
+                'postcode' => $vendor_data['postcode'],
+                'country_id' => $vendor_data['country_id']
+            ]
+        ];
+        
+        // cURL setup
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $api_url);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($post_data));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'Accept: application/json'
+        ]);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curl_error = curl_error($ch);
+        curl_close($ch);
+        
+        // Handle cURL errors
+        if ($curl_error) {
+            error_log("[GoogleAds] cURL Error for vendor_id $vendor_id: " . $curl_error);
+            $this->model_vendor_vendor->updateGoogleAdsInfo($vendor_id, null, 'error');
+            $this->response->setOutput(json_encode([
+                'success' => false,
+                'error' => 'Failed to connect to Ipshopy Ads service'
+            ]));
+            return;
+        }
+        
+        // Decode JSON response
+        $result = json_decode($response, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log("[GoogleAds] JSON Decode Error for vendor_id $vendor_id: " . json_last_error_msg());
+            $this->model_vendor_vendor->updateGoogleAdsInfo($vendor_id, null, 'error');
+            $this->response->setOutput(json_encode([
+                'success' => false,
+                'error' => 'Invalid response from Ipshopy Ads service'
+            ]));
+            return;
+        }
+        
+        // Log response for debugging
+        error_log("[GoogleAds] API Response for vendor_id $vendor_id: " . print_r($result, true));
+        
+        // Check API response
+        if (!isset($result['success'])) {
+            error_log("[GoogleAds] Missing 'success' in response for vendor_id $vendor_id");
+            $this->model_vendor_vendor->updateGoogleAdsInfo($vendor_id, null, 'error');
+            $this->response->setOutput(json_encode([
+                'success' => false,
+                'error' => 'Invalid response format from Ipshopy Ads service'
+            ]));
+            return;
+        }
+        
+        if ($result['success'] === true) {
+            // Get session ID for tracking
+            $session_id = $result['data']['session_id'] ?? null;
+            $status = $result['data']['status'] ?? 'processing';
+            
+            if ($session_id) {
+                // Store session ID temporarily and set status to processing
+                $this->model_vendor_vendor->updateGoogleAdsInfo($vendor_id, $session_id, 'processing');
+                error_log("[GoogleAds] Setup started for vendor_id $vendor_id with session: $session_id");
+                
+                $this->response->setOutput(json_encode([
+                    'success' => true,
+                    'session_id' => $session_id,
+                    'status' => $status,
+                    'message' => 'Ipshopy Ads setup initiated successfully'
+                ]));
+            } else {
+                error_log("[GoogleAds] No session ID in response for vendor_id $vendor_id");
+                $this->model_vendor_vendor->updateGoogleAdsInfo($vendor_id, null, 'error');
+                $this->response->setOutput(json_encode([
+                    'success' => false,
+                    'error' => 'Failed to get session ID from Ipshopy Ads service'
+                ]));
+            }
+        } else {
+            // API returned success: false
+            $error_message = $result['error'] ?? 'Unknown error from Ipshopy Ads service';
+            error_log("[GoogleAds] API Error for vendor_id $vendor_id: " . $error_message);
+            $this->model_vendor_vendor->updateGoogleAdsInfo($vendor_id, null, 'error');
+            $this->response->setOutput(json_encode([
+                'success' => false,
+                'error' => $error_message
+            ]));
+        }
+        
+    } catch (Exception $e) {
+        error_log("[GoogleAds] Exception in googleAdsAutoCreate for vendor_id $vendor_id: " . $e->getMessage());
+        $this->response->setOutput(json_encode([
+            'success' => false,
+            'error' => 'Internal server error: ' . $e->getMessage()
+        ]));
+    }
+}
+
+      public function googleAdsStatus() {
+    // Suppress PHP warnings/notices
+    error_reporting(0);
+    ini_set('display_errors', 0);
+    
+    // Start output buffering
+    ob_start();
+    
+    $this->response->addHeader('Content-Type: application/json');
+    
+    $session_id = $this->request->get['session_id'] ?? null;
+    
+    if (!$session_id) {
+        ob_clean();
+        $this->response->setOutput(json_encode([
+            'success' => false,
+            'error' => 'Session ID is required'
+        ]));
+        return;
+    }
+    
+    try {
+        // Call microservice status endpoint
+        $api_url = 'https://gads.ipshopy.com/api/google-ads/status/' . $session_id;
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $api_url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Accept: application/json'
+        ]);
+        
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curl_error = curl_error($ch);
+        curl_close($ch);
+        
+        if ($curl_error) {
+            error_log("[GoogleAds] cURL Error in googleAdsStatus for session $session_id: " . $curl_error);
+            ob_clean();
+            $this->response->setOutput(json_encode([
+                'success' => false,
+                'error' => 'Failed to connect to Ipshopy Ads service'
+            ]));
+            return;
+        }
+        
+        // Decode response
+        $result = json_decode($response, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log("[GoogleAds] JSON Decode Error in ipshopyAdsStatus for session $session_id: " . json_last_error_msg());
+            ob_clean();
+            $this->response->setOutput(json_encode([
+                'success' => false,
+                'error' => 'Invalid response from Ipshopy Ads service'
+            ]));
+            return;
+        }
+        
+        // Log for debugging
+        error_log("[GoogleAds] Status response for session $session_id: " . print_r($result, true));
+        
+        if ($http_code === 200 && isset($result['success']) && $result['success'] && isset($result['data']['status'])) {
+            $status = $result['data']['status'];
+            
+            // Load model to handle DB updates
+            $this->load->model('vendor/vendor');
+            
+            // Find vendor_id by session_id
+            $vendor_id = $this->model_vendor_vendor->getVendorIdByGoogleAdsSession($session_id);
+            
+            if ($vendor_id) {
+                if ($status === 'completed') {
+                    $customer_id = $result['data']['customer_id'] ?? null;
+                    if ($customer_id) {
+                        $this->model_vendor_vendor->updateGoogleAdsInfo($vendor_id, $customer_id, 'ACTIVE');
+                        error_log("[GoogleAds] Updated vendor $vendor_id to connected with customer_id $customer_id");
+                    }
+                } elseif ($status === 'failed') {
+                    $error_msg = $result['data']['error'] ?? 'Unknown failure';
+                    $this->model_vendor_vendor->updateGoogleAdsInfo($vendor_id, null, 'failed');
+                    error_log("[GoogleAds] Failed for vendor $vendor_id: $error_msg");
+                }
+            } else {
+                error_log("[GoogleAds] No vendor found for session $session_id");
+            }
+            
+            ob_clean();
+            $this->response->setOutput(json_encode($result));
+        } else {
+            error_log("[GoogleAds] Invalid response for session $session_id: HTTP $http_code");
+            ob_clean();
+            $this->response->setOutput(json_encode([
+                'success' => false,
+                'error' => 'Failed to get status from Ipshopy Ads service'
+            ]));
+        }
+        
+    } catch (Exception $e) {
+        error_log("[GoogleAds] Exception in Ipshopyads status for session $session_id: " . $e->getMessage());
+        ob_clean();
+        $this->response->setOutput(json_encode([
+            'success' => false,
+            'error' => 'Status check failed: ' . $e->getMessage()
+        ]));
+    }
+}
+         private function callVendorServiceRegistration($vendorData) {
+		$vendorServiceUrl = 'https://api.ipshopy.com/vendors/register';
+		
+		// Prepare data for vendor-service microservice API
+		$apiData = array(
+			'firstname' => $vendorData['firstname'],
+			'lastname' => $vendorData['lastname'],
+			'email' => $vendorData['email'],
+			'telephone' => $vendorData['telephone'],
+			'company' => $vendorData['company'],
+			'address_1' => $vendorData['address_1'],
+			'address_2' => isset($vendorData['address_2']) ? $vendorData['address_2'] : '',
+			'city' => $vendorData['city'],
+			'postcode' => $vendorData['postcode'],
+			'country_id' => $vendorData['country_id'],
+			'zone_id' => $vendorData['zone_id'],
+			'password' => $vendorData['password'],
+			'fax' => isset($vendorData['fax']) ? $vendorData['fax'] : '', // GSTIN
+			'pan' => isset($vendorData['pan']) ? $vendorData['pan'] : '',
+			'payment_method' => isset($vendorData['payment_method']) ? $vendorData['payment_method'] : 'paypal',
+			'paypal' => isset($vendorData['paypal']) ? $vendorData['paypal'] : '',
+			'bank_name' => isset($vendorData['bank_name']) ? $vendorData['bank_name'] : '',
+			'bank_account_name' => isset($vendorData['bank_account_name']) ? $vendorData['bank_account_name'] : '',
+			'bank_account_number' => isset($vendorData['bank_account_number']) ? $vendorData['bank_account_number'] : '',
+			'google_ads_customer_id' => isset($vendorData['google_ads_customer_id']) ? $vendorData['google_ads_customer_id'] : null,
+			'store_description' => isset($vendorData['store_description']) ? $vendorData['store_description'] : array(),
+			'auto_create_google_ads' => true, // Enable automatic Google Ads account creation
+			'source' => 'vendor_php' // Track registration source
+		);
+		
+		// Make cURL request to vendor-service microservice
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $vendorServiceUrl);
+		curl_setopt($ch, CURLOPT_POST, true);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($apiData));
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 45); // Increased timeout for Google Ads API calls
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+			'Content-Type: application/json',
+			'Accept: application/json',
+			'User-Agent: IPShopy-VendorPHP/1.0'
+		));
+		
+		$response = curl_exec($ch);
+		$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		$error = curl_error($ch);
+		curl_close($ch);
+		
+		if ($error) {
+			error_log("Vendor-service API call failed: " . $error);
+			return false;
+		}
+		
+		if ($httpCode !== 201) {
+			error_log("Vendor-service API returned HTTP " . $httpCode . ": " . $response);
+			return false;
+		}
+		
+		$responseData = json_decode($response, true);
+		
+		// Log successful Google Ads integration
+		if (isset($responseData['data']['google_ads_customer_id'])) {
+			error_log("Ipshopy Ads account created/connected: " . $responseData['data']['google_ads_customer_id']);
+		}
+		
+		return $responseData;
+	}
+	
+     	private function sendVendorRegistrationEvent($vendorId, $email, $googleAdsStatus) {
+		$kafkaUrl = 'https://api.ipshopy.com/kafka/send-event';
+		
+		$eventData = array(
+			'topic' => 'vendor-events',
+			'event' => 'vendor_registered_php',
+			'vendor_id' => $vendorId,
+			'email' => $email,
+			'google_ads_status' => $googleAdsStatus,
+			'source' => 'vendor.php',
+			'timestamp' => date('c')
+		);
+		
+		// Make async cURL request (fire and forget)
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $kafkaUrl);
+		curl_setopt($ch, CURLOPT_POST, true);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($eventData));
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 5); // Short timeout for async call
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+			'Content-Type: application/json'
+		));
+		
+		$response = curl_exec($ch);
+		$error = curl_error($ch);
+		curl_close($ch);
+		
+		if ($error) {
+			error_log("Kafka event send failed: " . $error);
+		}
+	}
+
+public function checkGstinExist() {
+    $this->load->model('vendor/vendor');
+    
+    $json = [];
+
+    if (isset($this->request->get['fax']) && !empty($this->request->get['fax'])) {
+        $gstin = $this->request->get['fax'];
+        $vendor = $this->model_vendor_vendor->getVendorBygstin($gstin);
+
+        if ($vendor) {
+            $json['exists'] = true;
+        } else {
+            $json['exists'] = false;
+        }
+    } else {
+        $json['exists'] = false;
+    }
+
+    $this->response->addHeader('Content-Type: application/json');
+    $this->response->setOutput(json_encode($json));
+}    
+
+
+
+// nikita added for token and session of auto logout
+
+//  Add method to generate authentication token for vendor
+private function generateVendorAuthToken($vendor_id) {
+    // Load the model to interact with the database
+    $this->load->model('vendor/vendor');
+    
+    // Generate a secure token
+    $token = bin2hex(random_bytes(32));
+    $expires_at = date('Y-m-d H:i:s', strtotime('+1 hour'));
+    
+    // Store token in database
+    $this->model_vendor_vendor->storeVendorAuthToken($vendor_id, $token, $expires_at);
+    
+    // Store in session
+    $this->session->data['vendor_auth_token'] = $token;
+    $this->session->data['vendor_id'] = $vendor_id;
+    
+    return $token;
+}
+
+// Add method to verify vendor authentication token
+public function verifyVendorAuthToken($token) {
+    $this->load->model('vendor/vendor');
+    
+    // Check if token exists and is valid
+    $token_data = $this->model_vendor_vendor->getVendorAuthToken($token);
+    
+    if (!$token_data) {
+        return false;
+    }
+    
+    // Check if token is expired
+    if (strtotime($token_data['expires_at']) < time()) {
+        // Remove expired token
+        $this->model_vendor_vendor->removeVendorAuthToken($token);
+        return false;
+    }
+    
+    return true;
+}
+
+// Add method to check if vendor is authenticated
+public function isVendorAuthenticated() {
+    // Check if vendor is logged in
+    if (!$this->vendor->isLogged()) {
+        return false;
+    }
+    
+    // Check if authentication token exists in session or cookie
+    $token = null;
+    if (isset($this->session->data['vendor_auth_token'])) {
+        $token = $this->session->data['vendor_auth_token'];
+    } elseif (isset($_COOKIE['vendor_auth_token'])) {
+        $token = $_COOKIE['vendor_auth_token'];
+    }
+    
+    if (!$token) {
+        return false;
+    }
+    
+    // Verify token
+    return $this->verifyVendorAuthToken($token);
+}
+
+// Add method to validate vendor access to specific resources
+public function validateVendorAccess($requested_vendor_id) {
+    // Check if vendor is authenticated
+    if (!$this->isVendorAuthenticated()) {
+        return false;
+    }
+    
+    // Check if the requested vendor ID matches the authenticated vendor ID
+    $authenticated_vendor_id = $this->session->data['vendor_id'];
+    
+    if ($requested_vendor_id != $authenticated_vendor_id) {
+        // Log unauthorized access attempt
+        error_log("Unauthorized access attempt: Vendor $authenticated_vendor_id trying to access vendor $requested_vendor_id");
+        return false;
+    }
+    
+    return true;
+}
+
+// Add method to generate JWT token for Google Ads integration
+public function generateGoogleAdsAuthToken($vendor_id) {
+    // Load required libraries
+    $this->load->model('vendor/vendor');
+    
+    // Get vendor information
+    $vendor_info = $this->model_vendor_vendor->getVendor($vendor_id);
+    
+    if (!$vendor_info) {
+        return false;
+    }
+    
+    // Create payload for JWT token
+    $payload = array(
+        'vendor_id' => $vendor_id,
+        'email' => $vendor_info['email'],
+        'exp' => time() + 3600, // Token expires in 1 hour
+        'iat' => time(),
+        'scope' => 'google-ads-api'
+    );
+    
+    // Generate JWT token (using a simple approach since we don't have the JWT library)
+    $header = base64_encode(json_encode(array('typ' => 'JWT', 'alg' => 'HS256')));
+    $payload_encoded = base64_encode(json_encode($payload));
+    $signature = base64_encode(hash_hmac('sha256', $header . "." . $payload_encoded, 'JWT_SECRET_KEY', true));
+    
+    $jwt_token = $header . "." . $payload_encoded . "." . $signature;
+    
+    // Store token in database
+    $this->model_vendor_vendor->updateVendorGoogleAdsInfo($vendor_id, null, 'active', $jwt_token);
+    
+    return $jwt_token;
+}
+
+// Add method to verify Google Ads JWT token
+public function verifyGoogleAdsAuthToken($token) {
+    // Split the token
+    $token_parts = explode('.', $token);
+    
+    if (count($token_parts) != 3) {
+        return false;
+    }
+    
+    // Verify signature
+    $header = $token_parts[0];
+    $payload = $token_parts[1];
+    $signature = $token_parts[2];
+    
+    $expected_signature = base64_encode(hash_hmac('sha256', $header . "." . $payload, 'JWT_SECRET_KEY', true));
+    
+    if ($signature !== $expected_signature) {
+        return false;
+    }
+    
+    // Decode payload
+    $payload_data = json_decode(base64_decode($payload), true);
+    
+    // Check expiration
+    if (isset($payload_data['exp']) && $payload_data['exp'] < time()) {
+        return false;
+    }
+    
+    // Verify vendor exists and token matches
+    $this->load->model('vendor/vendor');
+    $vendor_info = $this->model_vendor_vendor->getVendor($payload_data['vendor_id']);
+    
+    if (!$vendor_info || !isset($vendor_info['google_ads_jwt_token']) || $vendor_info['google_ads_jwt_token'] !== $token) {
+        return false;
+    }
+    
+    return $payload_data;
+}
+
+// Add method to invalidate Google Ads token
+public function invalidateGoogleAdsAuthToken($vendor_id) {
+    $this->load->model('vendor/vendor');
+    $this->model_vendor_vendor->updateVendorGoogleAdsInfo($vendor_id, null, 'inactive', null);
+}
+
+// Add method to handle secure logout
+public function secureLogout() {
+    // Get vendor ID before logout
+    $vendor_id = $this->vendor->getId();
+    
+    // Invalidate Google Ads token if exists
+    if ($vendor_id) {
+        $this->invalidateGoogleAdsAuthToken($vendor_id);
+    }
+    
+    // Remove token from session
+    if (isset($this->session->data['vendor_auth_token'])) {
+        $token = $this->session->data['vendor_auth_token'];
+        
+        // Remove token from database
+        $this->load->model('vendor/vendor');
+        $this->model_vendor_vendor->removeVendorAuthToken($token);
+        
+        // Remove from session
+        unset($this->session->data['vendor_auth_token']);
+    }
+    
+    // Remove cookie
+    if (isset($_COOKIE['vendor_auth_token'])) {
+        setcookie('vendor_auth_token', '', time() - 3600, '/', '.ipshopy.com', true, true);
+        unset($_COOKIE['vendor_auth_token']);
+    }
+    
+    // Logout vendor
+    $this->vendor->logout();
+    
+    // Redirect to login page
+    $this->response->redirect($this->url->link('vendor/login', '', true));
+}    
+
+    
+// ___________________________________________________
+
+public function checkEmailExist() {
+    // prevent caching
+    $this->response->addHeader('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    $this->response->addHeader('Pragma: no-cache');
+    $this->response->addHeader('Content-Type: application/json');
+
+    $raw = $this->request->post['value'] ?? $this->request->get['value'] ?? '';
+    $email = strtolower(trim($raw)); // normalize
+
+    $exists = false;
+    if ($email !== '') {
+        $this->load->model('vendor/vendor');
+      
+        $row = $this->model_vendor_vendor->getVendorByEmail($email);
+        $exists = !empty($row);
+    }
+
+    $this->response->setOutput(json_encode([
+        'exists'  => $exists,
+        'message' => $exists ? 'Already exists' : ''
+    ]));
+}
+
+
+public function checkPhoneExist() {
+    $this->response->addHeader('Content-Type: application/json');
+    $phone = $this->request->post['value'] ?? $this->request->get['value'] ?? '';
+    $exists = false;
+    if ($phone !== '') {
+        $this->load->model('vendor/vendor');
+        $row = $this->model_vendor_vendor->getVendorByTelephone($phone);
+        $exists = !!$row;
+    }
+    $this->response->setOutput(json_encode([
+        'exists' => $exists,
+        'message' => $exists ? 'Already exists' : ''
+    ]));
+}
+
+public function checkDisplayNameExist() {
+    $this->response->addHeader('Content-Type: application/json');
+    $val = $this->request->post['value'] ?? $this->request->get['value'] ?? '';
+    $exists = false;
+    if ($val !== '' && method_exists($this->model_vendor_vendor, 'getVendorByDisplayName')) {
+        $this->load->model('vendor/vendor');
+        $row = $this->model_vendor_vendor->getVendorByDisplayName($val);
+        $exists = !!$row;
+    }
+    $this->response->setOutput(json_encode([
+        'exists' => $exists,
+        'message' => $exists ? 'Already exists' : ''
+    ]));
+}
+
+public function checkPanExist() {
+    // headers (optional but nice)
+    $this->response->addHeader('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    $this->response->addHeader('Pragma: no-cache');
+    $this->response->addHeader('Content-Type: application/json');
+
+    // read value from POST or GET
+    $val = $this->request->post['value'] ?? $this->request->get['value'] ?? '';
+    $val = strtoupper(trim($val));   // normalize like JS
+    $exists = false;
+
+    if ($val !== '') {
+        $this->load->model('vendor/vendor'); // <-- load FIRST
+
+       
+        if (method_exists($this->model_vendor_vendor, 'getVendorByPan')) {
+            $row = $this->model_vendor_vendor->getVendorByPan($val);
+            $exists = !empty($row);
+        } else {
+          
+            $query = $this->db->query("SELECT vendor_id FROM " . DB_PREFIX . "vendor WHERE pan = '" . $this->db->escape($val) . "' LIMIT 1");
+            $exists = (bool)$query->num_rows;
+        }
+    }
+
+    $this->response->setOutput(json_encode([
+        'exists'  => $exists,
+        'message' => $exists ? 'Already exists' : ''
+    ]));
+}
+
+// -----------------------------------------------
+
+
 }

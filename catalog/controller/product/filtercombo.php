@@ -28,9 +28,12 @@ if (isset($this->request->get['path'])) {
                 $sizes = $this->model_catalog_product->getSizesByKeyword($params['product_ida0']);
             }
         }
-        $data['sizes'] = $sizes;
-        $data['show_size_filter'] = count($sizes) > 0;
+         $data['sizes'] = $sizes;
+        $data['show_size_filter'] = (!empty($sizes) && is_array($sizes) && count($sizes) > 0);
         $data['selected_sizes'] = isset($this->request->get['size']) ? $this->request->get['size'] : [];
+
+        
+        
         // Rating filter
 
         // $data['selected_rating'] = isset($this->request->get['rating']) ? (int)$this->request->get['rating'] : 0;

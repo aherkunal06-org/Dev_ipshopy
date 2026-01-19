@@ -17,3 +17,7 @@ if (!defined('DIR_APPLICATION')) {
 require_once(DIR_SYSTEM . 'startup.php');
 
 start('catalog');
+
+
+ini_set('display_errors', 1);
+error_reporting(E_ALL);

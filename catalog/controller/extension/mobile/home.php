@@ -72,6 +72,8 @@ $category_group_settings = [
       $data['category_group2'] = $group_blocks2['groups']['Beauty_group']['group_combined'] ?? '';      
       
         $data['popular_brands']= $this->load->controller('common/popular_brands' );
+        $data['brand_product']= $this->load->controller('common/brand_product' );
+
       
 	
 	 

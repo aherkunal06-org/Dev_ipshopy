@@ -1,0 +1,132 @@
+name: Dev Build and Deploy
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  build-and-deploy:
+    runs-on: [self-hosted, dev]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mysqli, gd, zip, curl, mbstring
+
+      - name: Create deployment directory
+        run: |
+          sudo mkdir -p /var/www/html/dev-ipshopy
+          sudo chown -R $USER:$USER /var/www/html/dev-ipshopy
+
+      - name: Deploy files
+        run: |
+          rsync -av --delete \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'storage_dev_ipshopy/logs/*' \
+            --exclude 'storage_dev_ipshopy/cache/*' \
+            --exclude 'storage_dev_ipshopy/session/*' \
+            ./ /var/www/html/dev-ipshopy/
+
+      - name: Install Composer dependencies
+        run: |
+          cd /var/www/html/dev-ipshopy
+          composer install --no-dev --optimize-autoloader
+
+      - name: Generate config.php
+        run: |
+          cat > /var/www/html/dev-ipshopy/config.php << 'EOF'
+          <?php
+          // HTTP
+          define('HTTP_SERVER', 'http://localhost/dev-ipshopy/');
+
+          // HTTPS
+          define('HTTPS_SERVER', 'http://localhost/dev-ipshopy/');
+
+          // DIR
+          define('DIR_APPLICATION', '/var/www/html/dev-ipshopy/catalog/');
+          define('DIR_SYSTEM', '/var/www/html/dev-ipshopy/system/');
+          define('DIR_IMAGE', '/var/www/html/dev-ipshopy/image/');
+          define('DIR_STORAGE', '/var/www/html/dev-ipshopy/storage_dev_ipshopy/');
+          define('DIR_LANGUAGE', DIR_APPLICATION . 'language/');
+          define('DIR_TEMPLATE', DIR_APPLICATION . 'view/theme/');
+          define('DIR_CONFIG', DIR_SYSTEM . 'config/');
+          define('DIR_CACHE', DIR_STORAGE . 'cache/');
+          define('DIR_DOWNLOAD', DIR_STORAGE . 'download/');
+          define('DIR_LOGS', DIR_STORAGE . 'logs/');
+          define('DIR_MODIFICATION', DIR_STORAGE . 'modification/');
+          define('DIR_SESSION', DIR_STORAGE . 'session/');
+          define('DIR_UPLOAD', DIR_STORAGE . 'upload/');
+
+          // DB
+          define('DB_DRIVER', 'mysqli');
+          define('DB_HOSTNAME', 'localhost');
+          define('DB_USERNAME', 'root');
+          define('DB_PASSWORD', '');
+          define('DB_DATABASE', 'dev_ipshopy');
+          define('DB_PORT', '3306');
+          define('DB_PREFIX', 'oc_');
+          EOF
+
+      - name: Generate admin/config.php
+        run: |
+          cat > /var/www/html/dev-ipshopy/admin/config.php << 'EOF'
+          <?php
+          // HTTP
+          define('HTTP_SERVER', 'http://localhost/dev-ipshopy/admin/');
+          define('HTTP_CATALOG', 'http://localhost/dev-ipshopy/');
+
+          // HTTPS
+          define('HTTPS_SERVER', 'http://localhost/dev-ipshopy/admin/');
+          define('HTTPS_CATALOG', 'http://localhost/dev-ipshopy/');
+
+          // DIR
+          define('DIR_APPLICATION', '/var/www/html/dev-ipshopy/admin/');
+          define('DIR_SYSTEM', '/var/www/html/dev-ipshopy/system/');
+          define('DIR_IMAGE', '/var/www/html/dev-ipshopy/image/');
+          define('DIR_STORAGE', '/var/www/html/dev-ipshopy/storage_dev_ipshopy/');
+          define('DIR_CATALOG', '/var/www/html/dev-ipshopy/catalog/');
+          define('DIR_LANGUAGE', DIR_APPLICATION . 'language/');
+          define('DIR_TEMPLATE', DIR_APPLICATION . 'view/template/');
+          define('DIR_CONFIG', DIR_SYSTEM . 'config/');
+          define('DIR_CACHE', DIR_STORAGE . 'cache/');
+          define('DIR_DOWNLOAD', DIR_STORAGE . 'download/');
+          define('DIR_LOGS', DIR_STORAGE . 'logs/');
+          define('DIR_MODIFICATION', DIR_STORAGE . 'modification/');
+          define('DIR_SESSION', DIR_STORAGE . 'session/');
+          define('DIR_UPLOAD', DIR_STORAGE . 'upload/');
+
+          // DB
+          define('DB_DRIVER', 'mysqli');
+          define('DB_HOSTNAME', 'localhost');
+          define('DB_USERNAME', 'root');
+          define('DB_PASSWORD', '');
+          define('DB_DATABASE', 'dev_ipshopy');
+          define('DB_PORT', '3306');
+          define('DB_PREFIX', 'oc_');
+
+          // OpenCart API
+          define('OPENCART_SERVER', 'https://www.opencart.com/');
+          EOF
+
+      - name: Set permissions
+        run: |
+          sudo chown -R www-data:www-data /var/www/html/dev-ipshopy
+          sudo chmod -R 755 /var/www/html/dev-ipshopy
+          sudo chmod -R 777 /var/www/html/dev-ipshopy/storage_dev_ipshopy
+          sudo chmod -R 777 /var/www/html/dev-ipshopy/image
+
+      - name: Restart Apache
+        run: |
+          sudo systemctl restart apache2
+
+      - name: Deployment complete
+        run: |
+          echo "✅ Dev deployment complete!"
+          echo "🌐 Access at: http://localhost/dev-ipshopy/"

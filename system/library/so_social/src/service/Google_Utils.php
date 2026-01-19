@@ -54,45 +54,42 @@ class Google_Utils {
   static public function getStrLen($str) {
     $strlenVar = strlen($str);
     $d = $ret = 0;
-    for ($count = 0; $count < $strlenVar; ++ $count) {
-      $ordinalValue = ord($str{$ret});
+    for ($count = 0; $count < $strlenVar; ++$count) {
+      // ✅ Fixed: replaced {$ret} with [$ret]
+      $ordinalValue = ord($str[$ret]);
       switch (true) {
         case (($ordinalValue >= 0x20) && ($ordinalValue <= 0x7F)):
           // characters U-00000000 - U-0000007F (same as ASCII)
-          $ret ++;
+          $ret++;
           break;
 
         case (($ordinalValue & 0xE0) == 0xC0):
           // characters U-00000080 - U-000007FF, mask 110XXXXX
-          // see http://www.cl.cam.ac.uk/~mgk25/unicode.html#utf-8
           $ret += 2;
           break;
 
         case (($ordinalValue & 0xF0) == 0xE0):
           // characters U-00000800 - U-0000FFFF, mask 1110XXXX
-          // see http://www.cl.cam.ac.uk/~mgk25/unicode.html#utf-8
           $ret += 3;
           break;
 
         case (($ordinalValue & 0xF8) == 0xF0):
           // characters U-00010000 - U-001FFFFF, mask 11110XXX
-          // see http://www.cl.cam.ac.uk/~mgk25/unicode.html#utf-8
           $ret += 4;
           break;
 
         case (($ordinalValue & 0xFC) == 0xF8):
           // characters U-00200000 - U-03FFFFFF, mask 111110XX
-          // see http://www.cl.cam.ac.uk/~mgk25/unicode.html#utf-8
           $ret += 5;
           break;
 
         case (($ordinalValue & 0xFE) == 0xFC):
           // characters U-04000000 - U-7FFFFFFF, mask 1111110X
-          // see http://www.cl.cam.ac.uk/~mgk25/unicode.html#utf-8
           $ret += 6;
           break;
+
         default:
-          $ret ++;
+          $ret++;
       }
     }
     return $ret;

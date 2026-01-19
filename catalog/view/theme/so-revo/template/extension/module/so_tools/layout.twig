@@ -1,6 +1,6 @@
 {% if settings.status is defined and settings.status == 1 %}
 
-<div id="so-groups" class="{{ position }} so-groups-sticky hidden-xs" style="top: {{ top~'px' }}">
+<div id="so-groups" class="{{ position }} so-groups-sticky hidden-xs" style="top: {{ top~'px' }} display:none;">
 	{% if settings.show_category %}
 	<a class="sticky-categories" data-target="popup" data-popup="#popup-categories"><span>{{ text_head_categories }}</span><i class="fa fa-align-justify"></i></a>
 	{% endif %}

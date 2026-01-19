@@ -176,8 +176,6 @@
 					{% if soconfig.get_settings('desktop_Compare_status') %}
 					<button class="compare btn-button" type="button" title="{{ button_compare }}" onclick="compare.add('{{ product.product_id }}');"><i class="fa fa-random"></i></button>
 					{% endif %} 
-
-					
 				</div>
 				{% endif %} 
 			</div>
@@ -188,3 +186,135 @@
 	
 </div>
 
+<style>
+/* =========================
+   IMAGE CONTAINER
+========================= */
+.product-image-container {
+    position: relative;
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.product-image-container img {
+    max-height: 100%;
+    width: auto;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+}
+
+.product-item-container:hover .product-image-container img {
+    transform: scale(1.05);
+}
+
+
+/* =========================
+   TOP RIGHT ICONS (Wishlist & Compare)
+========================= */
+.top-right-icons {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+}
+
+.top-right-icons button {
+    background: rgba(255,255,255,0.9);
+    border: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #7b1fa2;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.top-right-icons button:hover {
+    background: #7b1fa2;
+    color: #fff;
+}
+
+
+/* =========================
+   ADD TO CART (Hover Bottom Center)
+========================= */
+.cart-hover {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.product-item-container:hover .cart-hover {
+    opacity: 1;
+    visibility: visible;
+}
+
+.cart-hover button {
+    background: #7b1fa2;
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.cart-hover button:hover {
+    background: #4a0072;
+    transform: translateY(-3px);
+}
+
+
+/* =========================
+   SLIDER NAVIGATION ARROWS
+========================= */
+.contentslider .owl-nav,
+.related-products .owl-nav {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    transform: translateY(-50%);
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+}
+
+.contentslider .owl-nav button,
+.related-products .owl-nav button {
+    background: rgba(123, 31, 162, 0.9);
+    color: #fff !important;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 16px;owl2-prev
+    pointer-events: auto;
+    transition: background 0.3s ease;
+}
+
+.contentslider .owl-nav button:hover,
+.related-products .owl-nav button:hover {
+    background: #4a0072;
+}
+
+</style>

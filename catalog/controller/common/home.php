@@ -89,6 +89,9 @@ $category_group_settings = [
         
         // brands 
         $data['popular_brands']= $this->load->controller('common/popular_brands');
+
+$data['brand_card'] = $this->load->controller('common/brand_product');
+
         
         
         //category card

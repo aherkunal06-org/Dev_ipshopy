@@ -95,7 +95,7 @@ header .header_hidden_{
   display: block;
 }
 .navbar-logo img{
-      width: 150px;
+      /* width: 150px; */
 }
 .header-center .row{
   align-items: center;

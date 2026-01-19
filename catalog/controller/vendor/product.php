@@ -64,7 +64,7 @@ class ControllerVendorProduct extends Controller {
 		//product draft start 23/06/25
 		
 
-   $vendor_id = $this->session->data['vendor_id'] ?? 0;
+$vendor_id = $this->session->data['vendor_id'] ?? 0;
 
     // ✅ SAVE AS DRAFT: Detect the draft button
     if (

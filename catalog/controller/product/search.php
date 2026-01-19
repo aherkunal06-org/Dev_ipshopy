@@ -9,11 +9,17 @@ class ControllerProductSearch extends Controller {
 
 		$this->load->model('tool/image');
 
+
+		
 		if (isset($this->request->get['search'])) {
 			$search = $this->request->get['search'];
 		} else {
+
+
 			$search = '';
 		}
+
+		
 
 		if (isset($this->request->get['tag'])) {
 			$tag = $this->request->get['tag'];
@@ -73,7 +79,7 @@ class ControllerProductSearch extends Controller {
 			$this->document->setTitle($this->language->get('heading_title'));
 		}
 		
-// 		add for search page conanical tags 
+        // 		add for search page conanical tags 
 		
 		if (isset($this->request->get['search'])) {
 			$canonical_url = $this->url->link('product/search', 'search=' . urlencode($this->request->get['search']), true);
@@ -83,7 +89,7 @@ class ControllerProductSearch extends Controller {
 			$this->document->addLink($canonical_url, 'canonical');
 		}
 
-// end here 
+        // end here 
 
 
 		$data['breadcrumbs'] = array();
@@ -234,7 +240,7 @@ class ControllerProductSearch extends Controller {
 
 				'filter_name'           => $search,
 				'filter_tag'            => $tag,
-				'filter_description'    => $description,
+				// 'filter_description'    => $description,
 				'filter_category_id'    => $category_id,
 				'filter_sub_category'   => $sub_category,
 				'filter_manufacturers'  => $manufacturer_ids,
@@ -262,9 +268,58 @@ class ControllerProductSearch extends Controller {
 
 			$results = $this->model_catalog_product->getProducts($filter_data);
 			
+
+			
 			$index = 0;
 		$brands = [];
+		$added_groups = [];
 			foreach ($results as $result) {
+
+	// 			  echo '<pre>';
+    // print_r($result); // Product चं पूर्ण data print होईल
+    // echo '</pre>';
+
+                     // First try to get sizes from product_variants table
+    $group_info = $this->model_catalog_product->getProductGroupSizes($result['product_id']);
+
+    if ($group_info && isset($group_info['group_id']) && !empty($group_info['sizes'])) {
+        // If sizes found in product_variants table
+        $group_id = (int)$group_info['group_id'];
+
+        if (in_array($group_id, $added_groups)) {
+            continue;
+        }
+
+        $added_groups[] = $group_id;
+        $sizes = $group_info['sizes'];
+
+    } else {
+        // Else get sizes using fallback method (product_option_value table)
+        $group_info_alt = $this->model_catalog_product->getProductGroupS($result['product_id']);
+
+        if ($group_info_alt && isset($group_info_alt['group_id'])) {
+            $group_id = (int)$group_info_alt['group_id'];
+
+            if (in_array($group_id, $added_groups)) {
+                continue;
+            }
+
+            $added_groups[] = $group_id;
+            $sizes = $group_info_alt['sizes'];
+
+        } else {
+            $sizes = array(); 
+        }
+    }
+
+
+echo '<pre>';
+echo 'Product ID: ' . $result['product_id'] . '<br>';
+var_dump($sizes);
+echo '</pre>';
+
+
+
 				if ($result['image']) {
 					$image = $this->model_tool_image->resize($result['image'], $this->config->get('theme_' . $this->config->get('config_theme') . '_image_product_width'), $this->config->get('theme_' . $this->config->get('config_theme') . '_image_product_height'));
 				} else {
@@ -307,6 +362,45 @@ class ControllerProductSearch extends Controller {
 					];
 				}
 				// filter end 
+				
+				// Build availability/stock flags to align with visual search behavior
+				$status = isset($result['status']) ? (int)$result['status'] : null;
+				$quantity = isset($result['quantity']) ? (int)$result['quantity'] : null;
+				$stock_status = isset($result['stock_status']) ? $result['stock_status'] : null;
+				$stock_status_id = isset($result['stock_status_id']) ? (int)$result['stock_status_id'] : null;
+
+				$availability_label = '';
+				$show_availability = false;
+				$can_add_to_cart = true;
+				$show_stock_status = false;
+
+				if ($status !== null) {
+					// Determine availability rules based on status
+					if ($status === 2) {
+						$availability_label = 'Coming soon';
+						$can_add_to_cart = false;
+						$show_availability = true;
+					} elseif ($status === 0) {
+						$availability_label = 'Currently unavailable';
+						$can_add_to_cart = false;
+						$show_availability = true;
+					} else {
+						$can_add_to_cart = true;
+					}
+
+					// Compute stock status visibility: only when NOT showing availability and quantity == 0 and stock_status is meaningful
+					if (!$show_availability && $quantity !== null && (int)$quantity === 0 && $stock_status) {
+						$ss = strtolower(trim($stock_status));
+						$meaningless = array('in stock','instock','available');
+						if (!in_array($ss, $meaningless, true)) {
+							$show_stock_status = true;
+						}
+					}
+				}
+				
+				//------------------- end here ------------------------
+				
+				
 				$data['products'][] = array(
 					'product_id'  => $result['product_id'],
 					'thumb'       => $image,
@@ -315,8 +409,11 @@ class ControllerProductSearch extends Controller {
 					'price'       => $price,
 					'special'     => $special,
 					'tax'         => $tax,
+					'availability_label' => $availability_label,// added on 28-09-2025
+					'show_availability'  => $show_availability, // 28-09-2025
 					'minimum'     => $result['minimum'] > 0 ? $result['minimum'] : 1,
 					'rating'      => $result['rating'],
+					 'sizes'       => $sizes,
 					'href'        => $this->url->link('product/product', 'product_id=' . $result['product_id'] . $url)
 				);
 			}
@@ -379,31 +476,31 @@ class ControllerProductSearch extends Controller {
 				'href'  => $this->url->link('product/search', 'sort=p.price&order=DESC' . $url)
 			);
 
-			if ($this->config->get('config_review_status')) {
-				$data['sorts'][] = array(
-					'text'  => $this->language->get('text_rating_desc'),
-					'value' => 'rating-DESC',
-					'href'  => $this->url->link('product/search', 'sort=rating&order=DESC' . $url)
-				);
+// 			if ($this->config->get('config_review_status')) {
+// 				$data['sorts'][] = array(
+// 					'text'  => $this->language->get('text_rating_desc'),
+// 					'value' => 'rating-DESC',
+// 					'href'  => $this->url->link('product/search', 'sort=rating&order=DESC' . $url)
+// 				);
 
-				$data['sorts'][] = array(
-					'text'  => $this->language->get('text_rating_asc'),
-					'value' => 'rating-ASC',
-					'href'  => $this->url->link('product/search', 'sort=rating&order=ASC' . $url)
-				);
-			}
+// 				$data['sorts'][] = array(
+// 					'text'  => $this->language->get('text_rating_asc'),
+// 					'value' => 'rating-ASC',
+// 					'href'  => $this->url->link('product/search', 'sort=rating&order=ASC' . $url)
+// 				);
+// 			}
 
-			$data['sorts'][] = array(
-				'text'  => $this->language->get('text_model_asc'),
-				'value' => 'p.model-ASC',
-				'href'  => $this->url->link('product/search', 'sort=p.model&order=ASC' . $url)
-			);
+// 			$data['sorts'][] = array(
+// 				'text'  => $this->language->get('text_model_asc'),
+// 				'value' => 'p.model-ASC',
+// 				'href'  => $this->url->link('product/search', 'sort=p.model&order=ASC' . $url)
+// 			);
 
-			$data['sorts'][] = array(
-				'text'  => $this->language->get('text_model_desc'),
-				'value' => 'p.model-DESC',
-				'href'  => $this->url->link('product/search', 'sort=p.model&order=DESC' . $url)
-			);
+// 			$data['sorts'][] = array(
+// 				'text'  => $this->language->get('text_model_desc'),
+// 				'value' => 'p.model-DESC',
+// 				'href'  => $this->url->link('product/search', 'sort=p.model&order=DESC' . $url)
+// 			);
 
 			$url = '';
 

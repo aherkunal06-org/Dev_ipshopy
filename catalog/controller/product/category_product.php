@@ -21,7 +21,7 @@ foreach ($category_ids as $category_id) {
     }
 }
 // var_dump($args);
-if ( $args['title']) {
+if ( isset($args['title'])) {
     $data['category_name'] = $args['title'];
     $data['category'] = [
         'view_more' => $this->url->link('product/category', 'path=' . $category_info['category_id'])
@@ -34,9 +34,9 @@ if ( $args['title']) {
 }
 
 // Prepare category name string
-if (count($categories) === 1) {
+if (isset($categories) && count($categories) === 1) {
     $data['category_name'] = $categories[0]['name'];
-} elseif (count($categories) > 1) {
+} elseif (isset($categories) &&  count($categories) > 1) {
     // Join multiple category names by comma
     $names = array_column($categories, 'name'); // Extract all names
     $data['category_name'] = implode(', ', $names);
@@ -105,9 +105,11 @@ if (count($categories) === 1) {
             if (!$added) break;
             $index++;
         }
+if(isset($categories)){
 
-        $data['categories'] = $categories;    // For normal category-wise rendering
-        $data['products'] = $interleaved;     // For interleaved single row display
+    $data['categories'] = $categories;    // For normal category-wise rendering
+    $data['products'] = $interleaved;     // For interleaved single row display
+}
 
         return $this->load->view('product/category_product', $data);
     }

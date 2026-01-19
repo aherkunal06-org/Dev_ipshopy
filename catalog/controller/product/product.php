@@ -159,8 +159,32 @@ class ControllerProductProduct extends Controller {
 		}
 
 		$this->load->model('catalog/product');
+		
+		
+        // 		product size start 
+        
+        $product_sizes = $this->model_catalog_product->getProductSizes($product_id);
+        
+        // Map child_option_name for display
+        foreach ($product_sizes as &$size) {
+            if (!empty($size['child_option_id'])) {
+                $option_values = $this->model_catalog_product->getOptionValuesByOptionId($size['parent_option_id']);
+                foreach ($option_values as $option_value) {
+                    if ($option_value['option_value_id'] == $size['child_option_id']) {
+                        $size['child_option_name'] = $option_value['name'];
+                        break;
+                    }
+                }
+            }
+        }
+        
+        $data['product_sizes'] = $product_sizes;
+        $data['product_type'] = $product_sizes[0]['product_type'] ?? '';
+        // 		product size end 
 
 		$product_info = $this->model_catalog_product->getProduct($product_id);
+
+		
 		// key highlight of the product 
 		$product_description = $this->model_catalog_product->getProductDescription($product_id);
         $data['key_highlight'] = $product_description['key_highlight'] ?? '';
@@ -170,12 +194,30 @@ class ControllerProductProduct extends Controller {
 		
 		$data['replacement_policy'] = $this->model_catalog_product->getReplacementPolicyByProductId($product_id);
 		// $data['replacement_policy'] = $replacement_policy;
-
+		
 		$data['product_warranty'] = $this->model_catalog_product->getWarrantyByProductId($product_id);
 		$data['product_return'] = $this->model_catalog_product->getReturnPolicyByProductId($product_id);
-			
         // 	product warranty and return policy end
+        
+		// Get product links grouped by group name
+		$data['product_links'] = $this->model_catalog_product->getProductLinks($product_id);
+		
 		if ($product_info) {
+
+
+                //  -------------- start ipshopy_assured logo--------------  
+    $vendor_id = $this->model_catalog_product->getVendorIdByProductId($product_id);
+
+    echo "<pre>";
+	print_r("vendor id is ---------".$vendor_id);
+	echo "</pre>";
+    $allowed_vendor_ids = [16, 17, 23, 1562];
+
+    
+    $data['ipshopy_assured'] = in_array($vendor_id, $allowed_vendor_ids);
+
+	 //  -------------- end ipshopy_assured logo--------------  
+
 			$url = '';
 
 			if (isset($this->request->get['path'])) {
@@ -269,27 +311,53 @@ class ControllerProductProduct extends Controller {
             $data['description'] = $this->fixBrokenHtmlTags($raw_description);
 
 
-			if ($product_info['quantity'] <= 0) {
-				$data['stock'] = $product_info['stock_status'];
-			} elseif ($this->config->get('config_stock_display')) {
-				$data['stock'] = $product_info['quantity'];
-			} else {
-				$data['stock'] = $this->language->get('text_instock');
-			}
+    
+// $data['product_info']=$product_info;
+// var_dump('product_info',$product_info);
+// 			    $data['stockStatus']=true;
+// 			if ($product_info['quantity'] <= 0) {
+// 			    $data['stockStatus']=false;
+// 				$data['stock'] = $product_info['stock_status'];
+
+// 			} elseif ($this->config->get('config_stock_display')) {
+// 				$data['stock'] = $product_info['quantity'];
+// 			} else {
+// 				$data['stock'] = $this->language->get('text_instock');
+// 			}
+  if($product_info['status']=='1' || $product_info['status']==1){
+    
+    			 $data['stockStatus']=true;
+    			    
+    			if ($product_info['quantity'] <= 0) {
+    			    $data['stockStatus']=false;
+    				$data['stock'] = $product_info['stock_status'];
+    
+    			} elseif ($this->config->get('config_stock_display')) {
+    				$data['stock'] = $product_info['quantity'];
+    			} else {
+    				$data['stock'] = $this->language->get('text_instock');
+    			}
+            }else{
+                $data['notAvailable']='Currently unavailable';
+            }
+
 
 			$this->load->model('tool/image');
 
+                $data['pant_chart']  = $this->model_tool_image->resize('catalog/banners/pant_chart1.jpg', 200, 300);
+                $data['shirt_chart'] = $this->model_tool_image->resize('catalog/banners/shirt_chart1.jpg',200,300);
+
 			if ($product_info['image']) {
 			    
-				// $data['popup'] = $this->model_tool_image->resize($product_info['image'], $this->config->get('theme_' . $this->config->get('config_theme') . '_image_popup_width'), $this->config->get('theme_' . $this->config->get('config_theme') . '_image_popup_height'));
-				$data['popup'] = $this->model_tool_image->resize($product_info['image'], 1600,1600);
+				$data['popup'] = $this->model_tool_image->resize($product_info['image'], $this->config->get('theme_' . $this->config->get('config_theme') . '_image_popup_width'), $this->config->get('theme_' . $this->config->get('config_theme') . '_image_popup_height'));
+				// $data['popup'] = $this->model_tool_image->resize($product_info['image'], 1600,1600);
 			} else {
 				$data['popup'] = '';
 			}
 
 			if ($product_info['image']) {
-				// $data['thumb'] = $this->model_tool_image->resize($product_info['image'], $this->config->get('theme_' . $this->config->get('config_theme') . '_image_thumb_width'), $this->config->get('theme_' . $this->config->get('config_theme') . '_image_thumb_height'));
-				$data['thumb'] = $this->model_tool_image->resize($product_info['image'], 1600,1600);
+				$data['thumb'] = $this->model_tool_image->resize($product_info['image'], $this->config->get('theme_' . $this->config->get('config_theme') . '_image_thumb_width'), $this->config->get('theme_' . $this->config->get('config_theme') . '_image_thumb_height'));
+				// $data['thumb'] = $this->model_tool_image->resize($product_info['image'], 1600,1600);
 				
 			} else {
 				$data['thumb'] = '';
@@ -426,7 +494,7 @@ class ControllerProductProduct extends Controller {
 if ($this->customer->isLogged()) {
     $data['customer_name'] = $this->customer->getFirstName() . '&nbsp;' . $this->customer->getLastName();
 
-    // 🔥 Fetch existing review for this customer + product
+    // ðŸ”¥ Fetch existing review for this customer + product
     $this->load->model('catalog/review');
     $existing_review = $this->model_catalog_review->getReviewByCustomerAndProduct(
         $this->customer->getId(),
@@ -434,12 +502,12 @@ if ($this->customer->isLogged()) {
     );
 
     if ($existing_review) {
-        // ✅ Set existing review text
+        // âœ… Set existing review text
         $data['customer_review_text'] = $existing_review['text'];
-        // ✅ Set existing rating
+        // âœ… Set existing rating
         $data['customer_review_rating'] = $existing_review['rating'];
 
-        // ✅ Prepare existing images (with thumbnail URL + filename)
+        // âœ… Prepare existing images (with thumbnail URL + filename)
         $existing_images = [];
         $this->load->model('tool/image');
         for ($i = 1; $i <= 5; $i++) {
@@ -498,7 +566,7 @@ if ($this->customer->isLogged()) {
 
         if ($data['is_logged']) {
             $customer_id = (int)$this->customer->getId();
-
+$data['customer_id']=$customer_id;
         $data['profile'] = true;
         
         // Load required models
@@ -676,7 +744,7 @@ if ($this->customer->isLogged()) {
             // end
             if ($product_info) {
 				// Load variant data
-				$data['product_variants'] = $this->model_catalog_product->getProductsVariants($product_id);
+				// $data['product_variants'] = $this->model_catalog_product->getProductsVariants($product_id);
 
                     $resized_images = [];
                     $this->load->model('tool/image');
@@ -715,7 +783,55 @@ if ($this->customer->isLogged()) {
 			$this->model_ipoffer_offer->incrementReferralVisit($referral_code);
 		}
 // 		referral and first time discount end 
+
+// product categories start 
+			$categories = $this->model_catalog_product->getProductCategoriesWithLevel($product_id);
         
+$data['category_id'] = isset($categories[0]['category_id']) ? $categories[0]['category_id'] : null;
+
+
+// product categories end
+
+
+
+// variant testing start 
+          $customer_ids = (int)$this->customer->getId()?(int)$this->customer->getId():0;
+//  if ($customer_ids==3241 ){
+        // Load model
+$this->load->model('catalog/variant');
+
+$current_product_id = (int)$this->request->get['product_id'];
+$variant_payload = [
+  'current_product_id' => $current_product_id,
+  'variants' => []
+];
+
+// 1) Get this product's variant row to read the group id
+$currentRow = $this->model_catalog_variant->getVariantRowByProductId(isset($this->request->get['product_id']) ? (int)$this->request->get['product_id'] :20292);
+
+if ($currentRow && !empty($currentRow['variant_group_id'])) {
+  $group_id = (int)$currentRow['variant_group_id'];
+
+  // 2) Load all variants in the same group
+  $rows = $this->model_catalog_variant->getVariantsByGroupId($group_id);
+
+  foreach ($rows as $r) {
+    $variant_payload['variants'][] = [
+      'product_id' => (int)$r['product_id'],
+      'url'        => $this->url->link('product/product', 'product_id=' . (int)$r['product_id']),
+      'color'      => $r['variant_name'] ?: null,   // treat variant_name as Color
+      'size'       => $r['size_value']   ?: null,   // Size
+      'image'      => $r['variant_image'] ? $this->model_tool_image->resize($r['variant_image'], 80, 80) : null,  // optional swatch
+      'in_stock'   => isset($r['quantity']) ? ((int)$r['quantity'] > 0) : true,
+      'status'     => isset($r['status']) ? (bool)$r['status'] : true,
+    ];
+  }
+}
+
+$data['variant_payload'] = $variant_payload;
+//  }
+// variant testing end
+
 			$this->response->setOutput($this->load->view('product/product', $data));
 		} else {
 			$url = '';
@@ -792,61 +908,41 @@ if ($this->customer->isLogged()) {
         // 		to display seller name on there product page 03-05-2025
         		$product_id = isset($this->request->get['product_id']) ? (int)$this->request->get['product_id'] : 0;
         		$vendors = $this->model_catalog_product->getVendorInfoByProductId($product_id);
+                    
+
+            $vendor_id = $this->model_catalog_product->getVendorIdByProductId($product['product_id']);
+
+// या vendor IDs साठीच logo दाखवायचा
+$allowed_vendor_ids = [16, 17, 23, 1562];
+
+// flag सेट करा
+$product['ipshopy_assured'] = in_array($vendor_id, $allowed_vendor_ids);
+
+
+				
+		// 		echo "<pre>";
+		//    print_r($product_id);
+		//    echo "</pre>";
         		$data['vendor_info_list'] = $vendors;
         		
         // 		$data['currency'] = $this->session->data['currency'];
 		
         // for product share on social media  added on 17-04-2025 by sagar
 		$data['product_url'] = $this->url->link('product/product', 'product_id=' . (int)$this->request->get['product_id']);
+// 		$data['custom_breadcrumb'] = $this->load->controller('product/breadcrumbpath');
+// After resolving $category_id ...
+
+$data['custom_breadcrumb'] = $this->load->controller('product/breadcrumbpath', [
+    'category_id'   => $data['category_id'],
+    'product_name'  => isset($product_info['name']) ? $product_info['name'] : null
+]);
+
+
         $this->response->setOutput($this->load->view('product/product', $data));
         // end here 
     	}
 
-        // 	public function review() {
-        // 		$this->load->language('product/product');
         
-        // 		$this->load->model('catalog/review');
-        
-        // 		if (isset($this->request->get['page'])) {
-        // 			$page = $this->request->get['page'];
-        // 		} else {
-        // 			$page = 1;
-        // 		}
-        
-        // 		$data['reviews'] = array();
-        
-        // 		$review_total = $this->model_catalog_review->getTotalReviewsByProductId($this->request->get['product_id']);
-        
-        // 		$results = $this->model_catalog_review->getReviewsByProductId($this->request->get['product_id'], ($page - 1) * 5, 5);
-        
-        // 		foreach ($results as $result) {
-        		    
-        // 		  //  added for add link in review 
-        // 		    $text = html_entity_decode($result['text'], ENT_QUOTES, 'UTF-8');
-        		    
-        // 			$data['reviews'][] = array(
-        // 				'author'     => $result['author'],
-        // 				'text'       => nl2br($text),
-        // 				'rating'     => (int)$result['rating'],
-        // 				'date_added' => date($this->language->get('date_format_short'), strtotime($result['date_added']))
-        // 			);
-        // 		}
-        
-        // 		$pagination = new Pagination();
-        // 		$pagination->total = $review_total;
-        // 		$pagination->page = $page;
-        // 		$pagination->limit = 5;
-        // 		$pagination->url = $this->url->link('product/product/review', 'product_id=' . $this->request->get['product_id'] . '&page={page}');
-        
-        // 		$data['pagination'] = $pagination->render();
-        
-        // 		$data['results'] = sprintf($this->language->get('text_pagination'), ($review_total) ? (($page - 1) * 5) + 1 : 0, ((($page - 1) * 5) > ($review_total - 5)) ? $review_total : ((($page - 1) * 5) + 5), $review_total, ceil($review_total / 5));
-        
-        // 		$this->response->setOutput($this->load->view('product/review', $data));
-        // 	}
-
-        // Sheetal Madam Changes - 12/06/2025
-
          public function review() {
 		$this->load->language('product/product');
 
@@ -861,7 +957,6 @@ if ($this->customer->isLogged()) {
 		$data['reviews'] = array();
 
 		$review_total = $this->model_catalog_review->getTotalReviewsByProductId($this->request->get['product_id']);
-
 
 		$results = $this->model_catalog_review->getReviewsByProductId($this->request->get['product_id'], ($page - 1) * 5, 5);
 
@@ -900,117 +995,29 @@ if ($this->customer->isLogged()) {
 	    }   
 
 
-        // public function write() {
-        //     $this->load->language('product/product');
-        //     $json = [];
-        
-        //     if ($this->request->server['REQUEST_METHOD'] == 'POST') {
-        //         // Validate name
-        //         if ((utf8_strlen($this->request->post['name']) < 3) || (utf8_strlen($this->request->post['name']) > 50)) {
-        //             $json['error'] = $this->language->get('error_name');
-        //         }
-        
-        //         // Validate review text
-        //         if ((utf8_strlen($this->request->post['text']) < 3) || (utf8_strlen($this->request->post['text']) > 1000)) {
-        //             $json['error'] = $this->language->get('error_text');
-        //         }
-        
-        // 		// Check for any word in the review text longer than 20 characters (without space)
-        //         if (preg_match('/\b\w{21,}\b/u', $this->request->post['text'])) {
-        //             $json['error'] = 'Invalid message: Words cannot exceed 20 characters.';
-        //         }
-            
-        
-        //         // Validate rating
-        //         if (empty($this->request->post['rating']) || $this->request->post['rating'] < 0 || $this->request->post['rating'] > 5) {
-        //             $json['error'] = $this->language->get('error_rating');
-        //         }
-    
-        // 		// ✅ Validate at least 2 images uploaded
-        //         if (!isset($this->request->files['review_images']) || count(array_filter($this->request->files['review_images']['name'])) < 2) {
-        //             $json['error'] = $this->language->get('error_images');
-        //         }
-     
-        //         // Captcha validation
-        //         if ($this->config->get('captcha_' . $this->config->get('config_captcha') . '_status') && in_array('review', (array)$this->config->get('config_captcha_page'))) {
-        //             $captcha = $this->load->controller('extension/captcha/' . $this->config->get('config_captcha') . '/validate');
-        //             if ($captcha) {
-        //                 $json['error'] = $captcha;
-        //             }
-        //         }
-        
-        //         // Continue only if no validation error
-        //         if (!isset($json['error'])) {
-        //             $this->load->model('catalog/review');
-        //             $image_paths = [];
-        
-        // 		if (isset($this->request->files['review_images'])) {
-        //         $review_image_dir = DIR_IMAGE . 'catalog/review/';
-        //         if (!is_dir($review_image_dir)) {
-        //             mkdir($review_image_dir, 0755, true);
-        //         }
-        
-        //         foreach ($this->request->files['review_images']['name'] as $key => $original_name) {
-        //             if (!empty($original_name)) {
-        //                 $file = [
-        //                     'name'     => $this->request->files['review_images']['name'][$key],
-        //                     'type'     => $this->request->files['review_images']['type'][$key],
-        //                     'tmp_name' => $this->request->files['review_images']['tmp_name'][$key],
-        //                     'error'    => $this->request->files['review_images']['error'][$key],
-        //                     'size'     => $this->request->files['review_images']['size'][$key]
-        //                 ];
-            
-        //                 $clean_name = basename($file['name']); // Remove path if any
-        //                 $ext = pathinfo($clean_name, PATHINFO_EXTENSION); // Get original extension
-        //                 $random_code = bin2hex(random_bytes(4)); // 8-character random string
-        //                 // $new_name = 'review_' . $random_code . '_' . $key . '.' . $ext;
-        //     			$new_name = 'review_' . $random_code . '_' . $key . '_' . $clean_name;
-            
-            
-        //                 $target_path = $review_image_dir . $new_name;
-            
-        //                 if (move_uploaded_file($file['tmp_name'], $target_path)) {
-        //                     $image_paths[] = $new_name;
-        //                 }
-        //             }
-        //         }
-        //     }
-        
-        //             //     $image_paths = array_slice($image_paths, 0, 5);
-        //             // }
-        
-        //             // Save review with image paths array
-        //             $this->model_catalog_review->addReview($this->request->get['product_id'], $this->request->post, $image_paths);
-        
-        //             $json['success'] = $this->language->get('text_success');
-        //         }
-        //     }
-        
-        //     $this->response->addHeader('Content-Type: application/json');
-        //     $this->response->setOutput(json_encode($json));
-        // }
+  
         
 public function write() {
     $this->load->language('product/product');
     $json = [];
 
     if ($this->request->server['REQUEST_METHOD'] == 'POST') {
-        // ✅ Validate name
+        // âœ… Validate name
         if ((utf8_strlen($this->request->post['name']) < 3) || (utf8_strlen($this->request->post['name']) > 25)) {
             $json['error'] = $this->language->get('error_name');
         }
 
-        // ✅ Validate review text
+        // âœ… Validate review text
         if ((utf8_strlen($this->request->post['text']) < 3) || (utf8_strlen($this->request->post['text']) > 1000)) {
             $json['error'] = $this->language->get('error_text');
         }
 
-        // ✅ Check for words exceeding 20 characters
+        // âœ… Check for words exceeding 20 characters
         if (preg_match('/\b\w{21,}\b/u', $this->request->post['text'])) {
             $json['error'] = 'Invalid message: Words cannot exceed 20 characters.';
         }
 
-        // ✅ Validate rating
+        // âœ… Validate rating
         if (empty($this->request->post['rating']) || $this->request->post['rating'] < 0 || $this->request->post['rating'] > 5) {
             $json['error'] = $this->language->get('error_rating');
         }
@@ -1018,7 +1025,7 @@ public function write() {
         $this->load->model('catalog/review');
         $uploaded_images = [];
 
-        // ✅ Upload new images
+        // âœ… Upload new images
         if (isset($this->request->files['review_images'])) {
             $review_image_dir = DIR_IMAGE . 'catalog/review/';
             if (!is_dir($review_image_dir)) {
@@ -1047,7 +1054,7 @@ public function write() {
             }
         }
 
-        // ✅ Read kept existing images sent from hidden fields
+        // âœ… Read kept existing images sent from hidden fields
         $kept_existing_images = [];
         if (isset($this->request->post['existing_images']) && is_array($this->request->post['existing_images'])) {
             foreach ($this->request->post['existing_images'] as $filename) {
@@ -1055,7 +1062,7 @@ public function write() {
             }
         }
 
-        // ✅ Read deleted images from deleted_review_images[]
+        // âœ… Read deleted images from deleted_review_images[]
         $deleted_images = [];
         if (isset($this->request->post['deleted_review_images']) && is_array($this->request->post['deleted_review_images'])) {
             foreach ($this->request->post['deleted_review_images'] as $filename) {
@@ -1063,15 +1070,15 @@ public function write() {
             }
         }
 
-        // ✅ Remove deleted images from kept_existing_images
+        // âœ… Remove deleted images from kept_existing_images
         if (!empty($deleted_images)) {
             $kept_existing_images = array_diff($kept_existing_images, $deleted_images);
         }
 
-        // ✅ Combine kept existing + new uploads
+        // âœ… Combine kept existing + new uploads
         $final_images = array_merge($kept_existing_images, $uploaded_images);
 
-        // ✅ Validate combined images count
+        // âœ… Validate combined images count
         // if (!isset($json['error'])) {
         //     if (count($final_images) < 2) {
         //         $json['error'] = 'You must have at least 3 images total (existing + new).';
@@ -1088,7 +1095,7 @@ public function write() {
 
 
 
-        // ✅ Captcha validation
+        // âœ… Captcha validation
         if (!isset($json['error']) &&
             $this->config->get('captcha_' . $this->config->get('config_captcha') . '_status') &&
             in_array('review', (array)$this->config->get('config_captcha_page'))) {
@@ -1102,7 +1109,7 @@ public function write() {
         if (!isset($json['error'])) {
             $product_id = (int)$this->request->get['product_id'];
 
-            // ✅ Update or insert review
+            // âœ… Update or insert review
             if ($this->customer->isLogged()) {
                 $customer_id = $this->customer->getId();
                 $existing_review = $this->model_catalog_review->getReviewByCustomerAndProduct($customer_id, $product_id);
@@ -1420,4 +1427,163 @@ private function fixBrokenHtmlTags($html) {
 
 // description end 
 
+// load more
+
+// public function loadMoreProducts() {
+//     $this->load->model('catalog/product');
+//     $this->load->model('tool/image');
+
+//     $category_id = (int)$this->request->get['category_id'];
+//     $page = isset($this->request->get['page']) ? (int)$this->request->get['page'] : 1;
+//     $limit = 6;
+//     $start = ($page - 1) * $limit;
+
+//     $filter_data = array(
+//         'filter_category_id' => $category_id,
+//         'start' => $start,
+//         'limit' => $limit
+//     );
+
+//     $results = $this->model_catalog_product->getProducts($filter_data);
+
+//     $products = array();
+//     foreach ($results as $result) {
+//         $image = $result['image']
+//             ? $this->model_tool_image->resize($result['image'], 200, 200)
+//             : $this->model_tool_image->resize('placeholder.png', 200, 200);
+
+//         $products[] = array(
+//             'product_id' => $result['product_id'],
+//             'thumb'      => $image,
+//             'name'       => $result['name'],
+//             'price'      => $result['price'],
+//             'href'       => $this->url->link('product/product', 'product_id=' . $result['product_id'])
+//         );
+//     }
+
+//     $this->response->addHeader('Content-Type: application/json');
+//     $this->response->setOutput(json_encode($products));
+// }
+public function loadMoreProducts() {
+    $this->load->model('catalog/product');
+    $this->load->model('tool/image');
+
+    $category_id = (int)$this->request->get['category_id'];
+    $page = isset($this->request->get['page']) ? (int)$this->request->get['page'] : 1;
+    $limit = 10;
+    $start = ($page - 1) * $limit;
+
+    $filter_data = array(
+        'filter_category_id' => $category_id,
+        'start' => $start,
+        'limit' => $limit
+    );
+
+    $results = $this->model_catalog_product->getProducts($filter_data);
+    $products = array();
+
+    foreach ($results as $result) {
+        $image = $result['image']
+            ? $this->model_tool_image->resize($result['image'], 180, 180)
+            : $this->model_tool_image->resize('placeholder.png', 180, 180);
+
+        $price = $this->currency->format($this->tax->calculate($result['price'], $result['tax_class_id'], $this->config->get('config_tax')), $this->session->data['currency']);
+
+        $special = false;
+        $discount_percent = null;
+
+        if ((float)$result['special']) {
+            $special = $this->currency->format($this->tax->calculate($result['special'], $result['tax_class_id'], $this->config->get('config_tax')), $this->session->data['currency']);
+            $discount_percent = round((($result['price'] - $result['special']) / $result['price']) * 100);
+        }
+
+        $products[] = array(
+            'product_id' => $result['product_id'],
+            'thumb'      => $image,
+            'name'       => $result['name'],
+            'price'      => $price,
+            'special'    => $special,
+            'discount'   => $discount_percent,
+            'href'       => $this->url->link('product/product', 'product_id=' . $result['product_id'])
+        );
     }
+
+    $this->response->addHeader('Content-Type: application/json');
+    $this->response->setOutput(json_encode($products));
+}
+
+// load more end
+// emi start 
+public function emi()
+	{
+		$this->response->addHeader('Content-Type: application/json');
+
+		$key_id = 'rzp_live_bQbZP0Klg0VXhd';      // 🔁 Replace with your test key
+		$url = "https://api.razorpay.com/v1/methods";
+
+		$curl = curl_init($url);
+
+		curl_setopt_array($curl, array(
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_USERPWD => $key_id,
+			CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
+		));
+
+		$response = curl_exec($curl);
+
+		if (curl_errno($curl)) {
+			$this->response->setOutput(json_encode(['error' => curl_error($curl)]));
+		} else {
+			$this->response->setOutput($response);
+		}
+
+		curl_close($curl);
+	}
+// emi end 
+
+    // Aggregate Ratings and Reviews
+    private function getProductJsonLd($product_info, $product_id) {
+        
+        $this->load->model('catalog/review');
+
+        $review_count = $this->model_catalog_review->getTotalReviewsByProductId($product_id);
+        $avg_rating   = $this->model_catalog_review->getAverageRatingByProductId($product_id);
+
+        $jsonld = [
+            "@context" => "https://schema.org",
+            "@type"    => "Product",
+            "name"     => $product_info['name'],
+            "image"    => $this->model_tool_image->resize($product_info['image'], 800, 800),
+            "description" => html_entity_decode($product_info['meta_description'] ?: strip_tags($product_info['description']), ENT_QUOTES, 'UTF-8'),
+            "sku"      => $product_info['sku'] ?? "",
+            "brand"    => ["@type" => "Brand", "name" => $product_info['manufacturer'] ?? ""],
+            "offers"   => [
+                "@type" => "Offer",
+                "url"   => $this->url->link('product/product', 'product_id=' . (int)$product_id),
+                "priceCurrency" => $this->session->data['currency'] ?? $this->config->get('config_currency'),
+                "price" => (float)$product_info['price'],
+                "availability" => ($product_info['quantity'] > 0) ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+            ]
+        ];
+    
+        if ($review_count > 0 && $avg_rating > 0) {
+            $jsonld["aggregateRating"] = [
+                "@type" => "AggregateRating",
+                "ratingValue" => round($avg_rating, 1),
+                "reviewCount" => $review_count
+            ];
+        }
+    
+        return [
+            'jsonld' => '<script type="application/ld+json">' .
+                json_encode($jsonld, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) .
+                '</script>',
+            'review_count' => $review_count,
+            'avg_rating'   => $avg_rating ? round($avg_rating, 1) : 0
+        ];
+    }
+    
+    
+    
+    
+}

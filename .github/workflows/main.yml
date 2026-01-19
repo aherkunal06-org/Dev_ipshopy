@@ -1,0 +1,122 @@
+name: Production Build and Deploy to cPanel
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: [self-hosted, prod]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mysqli, gd, zip, curl, mbstring
+
+      - name: Install Composer dependencies
+        run: |
+          composer install --no-dev --optimize-autoloader
+
+      - name: Generate production config.php
+        run: |
+          cat > config.php << 'EOF'
+          <?php
+          // HTTP
+          define('HTTP_SERVER', '${{ secrets.PROD_SITE_URL }}');
+
+          // HTTPS
+          define('HTTPS_SERVER', '${{ secrets.PROD_SITE_URL }}');
+
+          // DIR
+          define('DIR_APPLICATION', '${{ secrets.PROD_DIR_PATH }}/catalog/');
+          define('DIR_SYSTEM', '${{ secrets.PROD_DIR_PATH }}/system/');
+          define('DIR_IMAGE', '${{ secrets.PROD_DIR_PATH }}/image/');
+          define('DIR_STORAGE', '${{ secrets.PROD_DIR_PATH }}/storage_dev_ipshopy/');
+          define('DIR_LANGUAGE', DIR_APPLICATION . 'language/');
+          define('DIR_TEMPLATE', DIR_APPLICATION . 'view/theme/');
+          define('DIR_CONFIG', DIR_SYSTEM . 'config/');
+          define('DIR_CACHE', DIR_STORAGE . 'cache/');
+          define('DIR_DOWNLOAD', DIR_STORAGE . 'download/');
+          define('DIR_LOGS', DIR_STORAGE . 'logs/');
+          define('DIR_MODIFICATION', DIR_STORAGE . 'modification/');
+          define('DIR_SESSION', DIR_STORAGE . 'session/');
+          define('DIR_UPLOAD', DIR_STORAGE . 'upload/');
+
+          // DB
+          define('DB_DRIVER', 'mysqli');
+          define('DB_HOSTNAME', '${{ secrets.PROD_DB_HOST }}');
+          define('DB_USERNAME', '${{ secrets.PROD_DB_USER }}');
+          define('DB_PASSWORD', '${{ secrets.PROD_DB_PASSWORD }}');
+          define('DB_DATABASE', '${{ secrets.PROD_DB_NAME }}');
+          define('DB_PORT', '3306');
+          define('DB_PREFIX', 'oc_');
+          EOF
+
+      - name: Generate production admin/config.php
+        run: |
+          cat > admin/config.php << 'EOF'
+          <?php
+          // HTTP
+          define('HTTP_SERVER', '${{ secrets.PROD_SITE_URL }}admin/');
+          define('HTTP_CATALOG', '${{ secrets.PROD_SITE_URL }}');
+
+          // HTTPS
+          define('HTTPS_SERVER', '${{ secrets.PROD_SITE_URL }}admin/');
+          define('HTTPS_CATALOG', '${{ secrets.PROD_SITE_URL }}');
+
+          // DIR
+          define('DIR_APPLICATION', '${{ secrets.PROD_DIR_PATH }}/admin/');
+          define('DIR_SYSTEM', '${{ secrets.PROD_DIR_PATH }}/system/');
+          define('DIR_IMAGE', '${{ secrets.PROD_DIR_PATH }}/image/');
+          define('DIR_STORAGE', '${{ secrets.PROD_DIR_PATH }}/storage_dev_ipshopy/');
+          define('DIR_CATALOG', '${{ secrets.PROD_DIR_PATH }}/catalog/');
+          define('DIR_LANGUAGE', DIR_APPLICATION . 'language/');
+          define('DIR_TEMPLATE', DIR_APPLICATION . 'view/template/');
+          define('DIR_CONFIG', DIR_SYSTEM . 'config/');
+          define('DIR_CACHE', DIR_STORAGE . 'cache/');
+          define('DIR_DOWNLOAD', DIR_STORAGE . 'download/');
+          define('DIR_LOGS', DIR_STORAGE . 'logs/');
+          define('DIR_MODIFICATION', DIR_STORAGE . 'modification/');
+          define('DIR_SESSION', DIR_STORAGE . 'session/');
+          define('DIR_UPLOAD', DIR_STORAGE . 'upload/');
+
+          // DB
+          define('DB_DRIVER', 'mysqli');
+          define('DB_HOSTNAME', '${{ secrets.PROD_DB_HOST }}');
+          define('DB_USERNAME', '${{ secrets.PROD_DB_USER }}');
+          define('DB_PASSWORD', '${{ secrets.PROD_DB_PASSWORD }}');
+          define('DB_DATABASE', '${{ secrets.PROD_DB_NAME }}');
+          define('DB_PORT', '3306');
+          define('DB_PREFIX', 'oc_');
+
+          // OpenCart API
+          define('OPENCART_SERVER', 'https://www.opencart.com/');
+          EOF
+
+      - name: Deploy to cPanel via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./
+          server-dir: ${{ secrets.FTP_REMOTE_DIR }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github*
+            **/.github*/**
+            **/storage_dev_ipshopy/logs/**
+            **/storage_dev_ipshopy/cache/**
+            **/storage_dev_ipshopy/session/**
+
+      - name: Deployment complete
+        run: |
+          echo "✅ Production deployment to cPanel complete!"
+          echo "🌐 Site URL: ${{ secrets.PROD_SITE_URL }}"

@@ -1409,4 +1409,21 @@ class ModelVendorVendor extends Model
 		$query = $this->db->query("SELECT COUNT(*) AS total FROM " . DB_PREFIX . "vendor WHERE LOWER(gstin) = '" . $this->db->escape(utf8_strtolower($gstin)) . "'");
 		return $query->row['total'];
 	}
+
+public function getVendorByPan($pan, $exclude_vendor_id = 0) {
+    $pan = strtoupper(trim($pan));
+    $sql = "SELECT vendor_id
+              FROM " . DB_PREFIX . "vendor
+             WHERE pan = '" . $this->db->escape($pan) . "'";
+
+    if ((int)$exclude_vendor_id > 0) {
+        $sql .= " AND vendor_id <> " . (int)$exclude_vendor_id;
+    }
+
+    $sql .= " LIMIT 1";
+    return $this->db->query($sql)->row;
+	
+}
+ 
+
 }

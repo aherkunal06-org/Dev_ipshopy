@@ -8,14 +8,13 @@
         display:none !important;
     }
     #sellerRegistration{
-            display: flex
-;
-    /*justify-content: center;*/
-    align-items: center;
-    min-height: 100vh;
-    /*gap:20px;*/
-    justify-content: space-between;
-    width:100%;
+        display: flex;
+        /*justify-content: center;*/
+        align-items: center;
+        min-height: 100vh;
+        /*gap:20px;*/
+        justify-content: space-between;
+        width:100%;
     }
     #sellerRegistration > img{
         border-radius:10px;
@@ -65,12 +64,11 @@
 	{% if error_warning %}
 		<div class="alert alert-danger">
 			<i class="fa fa-exclamation-circle"></i>
-			{{ error_warning }}
 			<button type="button" class="close" data-dismiss="alert">&times;</button>
 		</div>
 	{% endif %}
 		<div class='ragistration_heading'>
-		    <a href='https://www.ipshopy.com'><img src="https://www.ipshopy.com/image/catalog/A-Satyashil/Logo%20props.png" alt="Logo" style='width:150px;'></a>
+		    <a href='https://www.ipshopy.com'><img src="https://www.ipshopy.com/image/catalog/A-Satyashil/Logo%20props.png" alt="Logo" style='width:150px; height:30px'></a>
 		{#<h1 class='r_heading'>{{ heading_title }}</h1>#}
 		
 		</div>
@@ -115,8 +113,8 @@
 
 							{#<form action="{{ action }}" method="post" enctype="multipart/form-data" class="form-horizontal">#}
 				<div class="tab-content" style='position:relative;'>
-						<h1 class='r_heading' style='position:absolute; top:0; color:white; left:50%; transform:translateX(-50%); z-index:99;' >{{ heading_title }} </h1> 
-						<div style='position:absolute; top:50px; right:20px; color:black; z-index:10; '> {{registration_video}}</div>
+						<h1 class='r_heading' style='position:absolute; top:18px; color:white; left:50%; transform:translateX(-50%); z-index:99;' >{{ heading_title }} </h1> 
+						<div style='position:absolute; top:70px; right:20px; color:black; z-index:10; '> {{registration_video}}</div>
 					<div class="tab-pane active" id="tab-user">
 						{% if column_right %}
 							{% set class = 'col-sm-6' %}
@@ -435,7 +433,9 @@
 					{#04-04-25 start umar#}
 						<div id="gst_container">
 						<div class="row">
-										<label for="input-fax" class="col-sm-12 control-label">{{ entry_gstin }}<i class="mandatory">*</i></label> {#change the position 01-04-2025#}
+										<label for="input-fax" class="col-sm-12 control-label">{{ entry_gstin }}
+										    {#<i class="mandatory">*</i>#}
+										</label> {#change the position 01-04-2025#}
 								<div class="col-sm-12">
 									<div class="form-group">
 										<div class="verified">
@@ -444,24 +444,24 @@
 												type="text" name="fax" value="{{ fax }}" placeholder="{{ pattern_gstin }}" id="input-fax" class="form-control" maxlength="15" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')"
     											onkeydown="if(event.key === '.' || event.key === 'e' || event.key === '-' ) event.preventDefault()"/>
 											</div>
-											<button type="button" id="gstin-verify" class = "btn btn-primary custom_button" onclick="fetchGSTINDetails()">Verify</button>
+											{#<button type="button" id="gstin-verify" class = "btn btn-primary custom_button" onclick="fetchGSTINDetails()">Verify</button>#}
 										</div>
 									</div>
 								</div>
 							</div>
 							{# {% if fax is empty %} #}
-								<div id="warning-fax" class="text-warning" style="display: none; padding-left: 15px;">
-									{{warning_fax}}
-								</div>
+								{#<div id="warning-fax" class="text-warning" style="display: none; padding-left: 15px;">#}
+								{#	{{warning_fax}}#}
+								{#</div>#}
 							{# {% endif %} #}
 							<div id="gstin_details">
-								{% if gstin_info %}
-									{% if gstin_info.error %}
-										<p>{{ gstin_info.error }}</p>
-									{% else %}
+								{#{% if gstin_info %}#}
+								{#	{% if gstin_info.error %}#}
+								{#		<p>{{ gstin_info.error }}</p>#}
+								{#	{% else %}#}
 										{# <p><strong>Status:</strong> {{ gstin_info.status.value or 'N/A' }}</p> #}
-									{% endif %}
-								{% endif %}
+								{#	{% endif %}#}
+								{#{% endif %}#}
 							</div>
 							{#<div class='row'>#}
 							{#	<div class="col-sm-12 gst-check" id="gst-hidden">#}
@@ -531,7 +531,7 @@
 										</label>
 										<div class="col-sm-12">
 											<input
-											type="text" name="company" value="{{ company }}" placeholder="{{ entry_company }}" id="input-company" class="form-control" readonly/>
+											type="text" name="company" value="{{ company }}" placeholder="{{ entry_company }}" id="input-company" class="form-control" /> 
 											{# {% if company is empty %} #}
 											<div id="warning-company" class="text-warning" style="display: none;">
 												{{warning_company}}
@@ -596,7 +596,11 @@
 														value="{{ store_description[language.language_id] ? store_description[language.language_id].name }}" 
 														placeholder="{{ entry_storename }}" 
 														id="input-name{{ language.language_id }}" 
-														class="form-control req-store"/>
+														class="form-control req-store"
+														pattern="^[A-Za-z]+(?: [A-Za-z]+)*$"
+														title="Only letters and single spaces are allowed (no numbers or special characters)"
+														oninput="this.value = this.value.replace(/[^A-Za-z ]/g, '').replace(/^\s+/, '').replace(/\s{2,}/g, ' ');"
+													/>
 														<div id="warning-store" class="text-warning" style="display: none;">
 															{{warning_store}}
 														</div>
@@ -671,6 +675,75 @@
 									{# </div> #}
 								{% endfor %}
 							</div>
+							
+							{#nikita google ads auto create checkbox start#}
+						{#<div class="row" style="margin-top: 15px;">#}
+						{#		<div class="col-sm-12">#}
+						{#			<div class="form-group">#}
+						{#				<div class="google-ads-section col-sm-12" style="border: 1px solid #ddd; padding: 5px; left:5px; border-radius: 5px; background-color: #f9f9f9; height:120px; width:420px;">#}
+						{#					<h6 style="color: #4285f4; margin-bottom: 15px;">#}
+						{#						<i class="fa fa-google" aria-hidden="true"></i> Enable ipshopy Ads Manager<span><label style="font-weight: normal;">#}
+						{#							<input type="checkbox" name="enable_google_ads" id="enable-google-ads" value="1" checked style="margin-left: 10px; position: relative; top: 3px;">#}
+													
+						{#						</label></span>#}
+						{#					</h5>#}
+                        
+                                            {# --------------------------------------------- #}
+											
+						{#					<!-- Auto-Connect Info (New) -->#}
+						{#					<div id="google-ads-autoconnect-info" style="display: none; margin-top: 10px; padding: 10px; background-color: #e8f5e8; border-radius: 3px; border-left: 4px solid #4caf50;">#}
+						{#						<p style="margin: 0; color: #2e7d32; font-size: 14px;">#}
+						{#							<i class="fa fa-link" style="color: #4caf50;"></i>#}
+						{#							<strong>Existing ipshopy Ads Account Detected</strong>#}
+						{#							<br>#}
+						{#							<small>We'll automatically connect your existing account and send you an invitation to link it to our platform.</small>#}
+						{#						</p>#}
+						{#					</div>#}
+											
+						{#					<!-- Google Ads Progress Container (Hidden by default) -->#}
+						{#					<div id="google-ads-progress-container" style="display: none; margin-top: 15px;">#}
+						{#						<div class="progress-info">#}
+						{#							<p style="margin-bottom: 10px; color: #333;">#}
+						{#								<i class="fa fa-cog fa-spin" style="color: #4285f4;"></i>#}
+						{#								<strong>Setting up your ipshopy Ads account...</strong>#}
+						{#							</p>#}
+						{#							<div class="progress" style="height: 20px;">#}
+						{#								<div id="google-ads-progress-bar" class="progress-bar progress-bar-striped active" #}
+						{#									 style="width: 0%; background-color: #4285f4; transition: width 0.3s ease;">#}
+						{#									<span id="google-ads-progress-text">0%</span>#}
+						{#								</div>#}
+						{#							</div>#}
+						{#							<div id="google-ads-status-message" style="margin-top: 10px; font-size: 14px; color: #666;">#}
+						{#								Initializing ipshopy Ads setup...#}
+						{#							</div>#}
+						{#						</div>#}
+						{#					</div>#}
+											
+						{#					<!-- Google Ads Success Message (Hidden by default) -->#}
+						{#					<div id="google-ads-success" style="display: none; margin-top: 15px;">#}
+						{#						<div class="alert alert-success">#}
+						{#							<i class="fa fa-check-circle"></i>#}
+						{#							<strong>ipshopy Ads account successfully connected!</strong>#}
+						{#							<br>#}
+						{#							<small>Advertiser ID: <span id="google-ads-customer-id"></span></small>#}
+						{#						</div>#}
+						{#					</div>#}
+											
+						{#					<!-- Google Ads Error Message (Hidden by default) -->#}
+						{#					<div id="google-ads-error" style="display: none; margin-top: 15px;">#}
+						{#						<div class="alert alert-warning">#}
+						{#							<i class="fa fa-exclamation-triangle"></i>#}
+						{#							<strong>ipshopy Ads setup encountered an issue</strong>#}
+						{#							<br>#}
+						{#							<small>Don't worry, you can set this up later from your dashboard.</small>#}
+						{#						</div>#}
+						{#					</div>#}
+						{#				</div>#}
+						{#			</div>#}
+						{#		</div>#}
+						{#	</div>#}
+							{#nikita google ads auto create checkbox end#}
+							
 							<div class='row'>
 								<div class="btns col-sm-12">
 									<a href="#tab-company" data-toggle="tab">
@@ -837,6 +910,23 @@ Terms & Conditions
 
 										</div>
 									</div>
+									
+									{#nikita added 12/10/2025 start#}
+{#									<div class="row">#}
+{#  <div class="col-sm-12">#}
+{#    <div>#}
+{#      <div class="col-sm-12" id="ads_integration">#}
+{#        <div style="cursor: pointer; font-weight: bolder; color: black;">#}
+{#          Enable ipshopy Adds Manager#}
+{#          <span>#}
+{#            <input type="checkbox" class="google_integration" name="enable_google_ads" value="1" checked style="margin-left:4px;" />#}
+{#          </span>#}
+{#        </div>#}
+{#      </div>#}
+{#    </div>#}
+{#  </div>#}
+{#</div>#}
+									{#nikita added 12/10/2025 end#}
 
 									{# privacy  end #}
 									<div class="buttons row">
@@ -1599,7 +1689,7 @@ this.value = this.value.slice(0, 10); // Truncate input to 6 digits
 //     // Initialize the address handlers
 //     setupAddressHandlers();
 //     });
-// </script>
+</script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -2118,10 +2208,10 @@ function setupNextButton4() {
         if (warningPan) warningPan.style.display = "none";
 
         // ✅ Validate GSTIN (mandatory, 15 characters)
-        if (gstinInput.value.trim().length !== 15) {
-            warningGstin.style.display = "block";
-            isValid = false;
-        }
+        // if (gstinInput.value.trim().length !== 15) {
+        //     warningGstin.style.display = "block";
+        //     isValid = false;
+        // }
 
         // ✅ Validate PAN (mandatory, 10 characters)
         if (panInput.value.trim().length !== 10) {
@@ -2136,10 +2226,10 @@ function setupNextButton4() {
         }
 
         // ✅ GSTIN Verify must be green
-        if (verifyButton.style.backgroundColor !== "green") {
-            alert("Please verify your GSTIN. It must be active (green).");
-            isValid = false;
-        }
+        // if (verifyButton.style.backgroundColor !== "green") {
+        //     alert("Please verify your GSTIN. It must be active (green).");
+        //     isValid = false;
+        // }
 
         if (!isValid) {
             event.preventDefault();
@@ -2418,110 +2508,88 @@ document.getElementById("closeModal").addEventListener("click", closePopup);
 
 
 <script>
-   function fetchGSTINDetails() {
+function fetchGSTINDetails() {
     const gstinNo = document.getElementById('input-fax').value.trim();
-    const verifyButton = document.getElementById('gstin-verify'); // Get Verify Button
-	const gstinDetails = document.getElementById('gstin_details');
-    const gstCheckbox = document.getElementById('gst-checkbox');
-	const companyInput = document.getElementById('input-company'); // Get Company Input Field
-
-    if (!verifyButton) {
-        console.error("Verify button not found! Check your button ID.");
-        return;
-    }
+    const verifyButton = document.getElementById('gstin-verify');
+    const gstinDetails = document.getElementById('gstin_details');
+    const companyInput = document.getElementById('input-company');
 
     if (!gstinNo) {
         alert("Please enter GSTIN number");
         return;
     }
 
-    console.log("Fetching GSTIN details for:", gstinNo); // Debugging input
-
-    fetch(`index.php?route=razorpayapis/razorpay_gstin&gstin_no=${gstinNo}`, {
+    // 1️⃣ First check in DB
+    fetch(`index.php?route=vendor/vendor/checkGstinExist&fax=${encodeURIComponent(gstinNo)}`, {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
     .then(response => response.json())
-    .then(data => {
-        console.log("API Response:", data); // Debugging response
-
-        if (data && data.gstin_info && !data.gstin_info.error) {
-            const name = data.gstin_info.legal_name?.value || 'N/A';
-            const status = data.gstin_info.status?.value || 'N/A';
-            let message = "";
-
-            if (status.toLowerCase() === "active") {
-                verifyButton.style.setProperty("background-color", "green", "important"); // Force color change
-                verifyButton.style.setProperty("border-color", "green", "important");
-				verifyButton.textContent = "Verified"; // Change text to "Verified"
-                message = "GSTIN number is verified successfully.";
-
-				// ✅ Set the Legal Name as Company Name
-                if (companyInput) {
-                    companyInput.value = name; // Set legal name from GSTIN API
-                }
-
-            } else if (status.toLowerCase() === "cancelled") {
-                verifyButton.style.setProperty("background-color", "red", "important");
-                verifyButton.style.setProperty("border-color", "red", "important");
-				verifyButton.textContent = "Not Verified"; // Change text to "Not Verified"
-                message = "Your GSTIN number status is cancelled. Please provide an active GSTIN number.";
-            }
-
-           gstinDetails.innerHTML = `
-            <p style="color: ${status.toLowerCase() === 'active' ? 'green' : 'red'};"><strong>${message}</strong></p>
-        `;
-        } else {
+    .then(dbData => {
+        if (dbData.exists) {
             verifyButton.style.setProperty("background-color", "red", "important");
             verifyButton.style.setProperty("border-color", "red", "important");
-            const errorMessage = data?.gstin_info?.error || "Invalid GSTIN Number";
-            document.getElementById('gstin_details').innerHTML = `<p>${errorMessage}</p>`;
-            alert(errorMessage);
+            // verifyButton.textContent = "Already Exists";
+            gstinDetails.innerHTML = `<p style="color: red;"><strong>This GSTIN already exists in the system.</strong></p>`;
+        } else {
+            // 2️⃣ Call GSTIN API only if not in DB
+            fetch(`index.php?route=razorpayapis/razorpay_gstin&gstin_no=${encodeURIComponent(gstinNo)}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(apiData => {
+                if (apiData && apiData.gstin_info && !apiData.gstin_info.error) {
+                    const name = apiData.gstin_info.legal_name?.value || 'N/A';
+                    const status = apiData.gstin_info.status?.value || 'N/A';
+                    verifyButton.style.setProperty("background-color", "green", "important");
+                    verifyButton.style.setProperty("border-color", "green", "important");
+                    verifyButton.textContent = "Verified";
+                    gstinDetails.innerHTML = `<p style="color: green;"><strong>GSTIN is succefully verified</strong></p>`;
+
+                    if (companyInput) {
+                        companyInput.value = name; // Set business name
+                    }
+                } else {
+                    const errorMessage = apiData?.gstin_info?.error || "Invalid GSTIN Number";
+                    verifyButton.style.setProperty("background-color", "red", "important");
+                    verifyButton.style.setProperty("border-color", "red", "important");
+                    verifyButton.textContent = "Not Verified";
+                    gstinDetails.innerHTML = `<p style="color: red;"><strong>${errorMessage}</strong></p>`;
+                }
+            })
+            .catch(err => {
+                console.error("GSTIN API error:", err);
+                verifyButton.style.setProperty("background-color", "red", "important");
+                verifyButton.style.setProperty("border-color", "red", "important");
+                gstinDetails.innerHTML = `<p>Failed to fetch GSTIN details. Please try again.</p>`;
+            });
         }
     })
-    .catch(error => {
-        console.error("Error fetching GSTIN details:", error);
+    .catch(err => {
+        console.error("DB check error:", err);
         verifyButton.style.setProperty("background-color", "red", "important");
         verifyButton.style.setProperty("border-color", "red", "important");
-        document.getElementById('gstin_details').innerHTML = `<p>Failed to fetch GSTIN details.</p>`;
-        alert("Failed to fetch GSTIN details. Please try again.");
+        gstinDetails.innerHTML = `<p>Failed to check GSTIN existence. Please try again.</p>`;
     });
 }
 
-// Event Listener to Clear Messages when Checkbox is Checked
-document.getElementById('gst-checkbox').addEventListener('change', function () {
-    if (this.checked) {
-        document.getElementById('gstin_details').innerHTML = ""; // Clear GSTIN details
-        const verifyButton = document.getElementById('gstin-verify');
-        if (verifyButton) {
-            verifyButton.style.removeProperty("background-color");
-            verifyButton.style.removeProperty("border-color");
-            verifyButton.textContent = "Verify"; // Reset button text
-        }
-    }
-});
-
-// ✅ Event Listener to Clear GSTIN Details & Company Name when Input is Empty
+// Clear GSTIN details when input is empty
 document.getElementById('input-fax').addEventListener('input', function () {
     const gstinDetails = document.getElementById('gstin_details');
     const verifyButton = document.getElementById('gstin-verify');
-    const companyInput = document.getElementById('input-company'); // Get Company Input Field
+    const companyInput = document.getElementById('input-company');
 
     if (this.value.trim() === "") {
-        gstinDetails.innerHTML = ""; // Clear GSTIN details
-
+        gstinDetails.innerHTML = "";
         if (verifyButton) {
             verifyButton.style.removeProperty("background-color");
             verifyButton.style.removeProperty("border-color");
-            verifyButton.textContent = "Verify"; // Reset button text
+            verifyButton.textContent = "Verify";
         }
-
-        // ✅ Clear company name when GSTIN is empty
         if (companyInput) {
-            companyInput.value = ""; 
+            companyInput.value = "";
         }
     }
 });
-
 </script>
 
 
@@ -2829,3 +2897,749 @@ document.getElementById('input-pan').addEventListener('input', function () {
 });
 </script>
 
+
+{# nikita google ads auto create start #}
+{#<script>#}
+{#document.addEventListener('DOMContentLoaded', function() {#}
+{#    const form = document.getElementById('form-product');#}
+{#    const googleAdsCheckbox = document.querySelector('input[name="enable_google_ads"]');#}
+{#    const progressContainer = document.getElementById('ipshopy-ads-progress-container');#}
+{#    const progressBar = document.getElementById('ipshopy-ads-progress-bar');#}
+{#    const progressText = document.getElementById('ipshopy-ads-progress-text');#}
+{#    const statusMessage = document.getElementById('ipshopy-ads-status-message');#}
+{#    const successContainer = document.getElementById('ipshopy-ads-success');#}
+{#    const errorContainer = document.getElementById('ipshopy-ads-error');#}
+{#    const accountIdSpan = document.getElementById('ipshopy-ads-account-id');#}
+
+{#    let googleAdsSessionId = null;#}
+{#    let pollingInterval = null;#}
+
+{#    if (form) {#}
+{#        form.addEventListener('submit', function(event) {#}
+{#            if (googleAdsCheckbox && googleAdsCheckbox.checked) {#}
+{#                event.preventDefault();#}
+                
+               
+{#                showGoogleAdsProgress();#}
+
+               
+{#                const formData = new FormData(form);#}
+                
+{#                fetch(form.action, {#}
+{#                    method: 'POST',#}
+{#                    headers: {#}
+{#                        'X-Requested-With': 'XMLHttpRequest'#}
+{#                    },#}
+{#                    body: formData#}
+{#                })#}
+{#                .then(response => response.json())#}
+{#                .then(result => {#}
+{#                    console.log('Form submitted successfully:', result);#}
+                    
+                   
+{#                    if (!result.success && result.errors) {#}
+                        
+{#                        let errorMsg = 'Validation failed:\n';#}
+{#                        if (result.missing_fields && result.missing_fields.length > 0) {#}
+{#                            errorMsg += 'Missing required fields: ' + result.missing_fields.join(', ');#}
+{#                        }#}
+{#                        showError(errorMsg);#}
+{#                        return;#}
+{#                    }#}
+                    
+{#                    if (result.success && result.vendor_id) {#}
+{#                        console.log('Vendor ID received:', result.vendor_id);#}
+                        
+                       
+{#                        const googleAdsCheckbox = document.querySelector('input[name="enable_google_ads"]');#}
+{#                        if (googleAdsCheckbox && googleAdsCheckbox.checked) {#}
+{#                            const companyName = document.querySelector('input[name="company"]')?.value || 'Unknown Company';#}
+                            
+{#                            startGoogleAdsAutoCreate(result.vendor_id, companyName);#}
+{#                        } else {#}
+                            
+{#                            window.location.href = '{{ success }}';#}
+{#                        }#}
+{#                    } else {#}
+{#                        console.log('Failed to get vendor ID:', result);#}
+{#                        showError('Failed to register vendor or get vendor ID');#}
+{#                    }#}
+{#                })#}
+{#                .catch(error => {#}
+{#                    console.error('Form submission error:', error);#}
+{#                    showError('Failed to submit registration form');#}
+{#                });#}
+{#            }#}
+{#        });#}
+{#    }#}
+
+{#    function showGoogleAdsProgress() {#}
+{#        if (progressContainer) progressContainer.style.display = 'block';#}
+{#        if (successContainer) successContainer.style.display = 'none';#}
+{#        if (errorContainer) errorContainer.style.display = 'none';#}
+{#        updateProgress(10, 'Initializing ipshopy Ads integration...');#}
+{#    }#}
+
+{#    function startGoogleAdsSetup(vendorId) {#}
+{#        if (!vendorId) {#}
+{#            showError('No vendor ID available for ipshopy Ads setup');#}
+{#            return;#}
+{#        }#}
+
+{#        updateProgress(25, 'Creating ipshopy Ads account...');#}
+{#        createGoogleAdsAccount(vendorId);#}
+{#    }#}
+
+{#    function createGoogleAdsAccount(vendorId) {#}
+{#        const vendorData = getVendorDataFromForm(vendorId);#}
+
+    
+{#        fetch('https://gads.ipshopy.com/api/google-ads/autoSetupGoogleAds', {#}
+{#            method: 'POST',#}
+{#            headers: { 'Content-Type': 'application/json' },#}
+{#            body: JSON.stringify(vendorData)#}
+{#        })#}
+{#        .then(response => response.json())#}
+{#        .then(data => {#}
+
+{#            if (data.success) {#}
+{#                updateProgress(75, 'Account created successfully!');#}
+                
+{#                storeAccountInfo(vendorId, data.data.customerId);#}
+                
+{#                updateProgress(100, 'ipshopy Ads integration complete!');#}
+{#                showSuccess(data.data.customerId);#}
+{#            } else {#}
+{#                showError(data.error || 'Failed to create ipshopy Ads account');#}
+{#            }#}
+{#        })#}
+{#        .catch(error => {#}
+{#            showError('Network error during account setup');#}
+{#        });#}
+{#    }#}
+
+{#    function getVendorDataFromForm(vendorId) {#}
+{#        return {#}
+{#            vendorId: vendorId,#}
+{#            email: document.getElementById('input-email').value,#}
+{#            firstName: document.getElementById('input-firstname').value,#}
+{#            lastName: document.getElementById('input-lastname').value,#}
+{#            companyName: document.getElementById('input-company').value,#}
+{#            phone: document.getElementById('input-telephone').value,#}
+{#            address: {#}
+{#                address_1: document.getElementById('input-address-1').value,#}
+{#                city: document.getElementById('input-city').value,#}
+{#                postcode: document.getElementById('input-postcode').value,#}
+{#                country_id: document.getElementById('input-country').value#}
+{#            }#}
+{#        };#}
+{#    }#}
+
+{#    function storeAccountInfo(vendorId, customerId) {#}
+{#        fetch('{{ action }}', {#}
+{#            method: 'POST',#}
+{#            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },#}
+{#            body: `vendor_id=${vendorId}&google_ads_customer_id=${customerId}&google_ads_status=active&google_ads_access_type=restricted&google_ads_managed_by=ipshopy&google_ads_direct_access=0`#}
+{#        })#}
+{#        .then(response => response.json())#}
+{#        .then(data => console.log('Account info stored:', data))#}
+{#        .catch(err => console.error('Failed to store account info:', err));#}
+{#    }#}
+
+{#    function updateProgress(percentage, message) {#}
+{#        if (progressBar) {#}
+{#            progressBar.style.width = percentage + '%';#}
+{#            progressBar.setAttribute('aria-valuenow', percentage);#}
+{#        }#}
+{#        if (progressText) progressText.textContent = percentage + '%';#}
+{#        if (statusMessage) statusMessage.textContent = message;#}
+{#    }#}
+
+{#    function showSuccess(customerId) {#}
+{#        if (progressContainer) progressContainer.style.display = 'none';#}
+{#        if (errorContainer) errorContainer.style.display = 'none';#}
+{#        if (successContainer) successContainer.style.display = 'block';#}
+{#        if (accountIdSpan) accountIdSpan.textContent = customerId;#}
+        
+
+{#        setTimeout(() => {#}
+{#            window.location.href = '{{ success }}';#}
+{#        }, 3000);#}
+{#    }#}
+
+{#    function showError(message) {#}
+{#        if (progressContainer) progressContainer.style.display = 'none';#}
+{#        if (successContainer) successContainer.style.display = 'none';#}
+{#        if (errorContainer) {#}
+{#            errorContainer.style.display = 'block';#}
+{#            const errorMessageSpan = document.getElementById('ipshopy-ads-error-message');#}
+{#            if (errorMessageSpan) errorMessageSpan.textContent = message;#}
+{#        }#}
+        
+{#        console.error('ipshopy Ads Error:', message);#}
+        
+{#        setTimeout(() => {#}
+{#            window.location.href = '{{ success }}';#}
+{#        }, 5000);#}
+{#    }#}
+{#});#}
+{#</script>#}
+
+
+
+
+{# Changes Start #}
+
+<script type="text/javascript">
+function validateAddress() {
+    const address1 = document.getElementById('input-address-1').value.trim();
+    const postcode = document.getElementById('input-postcode').value.trim();
+    const warningAddress = document.getElementById('warning-address');
+    const warningPostcode = document.getElementById('warning-postcode');
+
+    // Validate address_1
+    if (address1 === '') {
+        warningAddress.style.display = 'block';
+    } else {
+        warningAddress.style.display = 'none';
+    }
+
+    // Validate postcode (must be 6 digits)
+    const postcodePattern = /^[0-9]{6}$/;
+    if (!postcodePattern.test(postcode)) {
+        warningPostcode.style.display = 'block';
+    } else {
+        warningPostcode.style.display = 'none';
+    }
+}
+</script>
+
+{# Changes End #}
+
+<script type="text/javascript">
+// Global variables for Google Ads integration
+let googleAdsSessionId = null;
+let googleAdsStatusInterval = null;
+let googleAdsProgressContainer = null;
+
+// Set the success URL
+const successUrl = 'index.php?route=vendor/success'; // <-- Redirect URL after success
+
+// Initialize Google Ads progress container
+function initGoogleAdsProgressContainer() {
+    if (!googleAdsProgressContainer) {
+        googleAdsProgressContainer = document.createElement('div');
+        googleAdsProgressContainer.id = 'google-ads-progress-container';
+        googleAdsProgressContainer.style.display = 'none';
+        // googleAdsProgressContainer.innerHTML = `
+        //     <div class="alert alert-info" style="margin-top: 15px;">
+        //         <h4><i class="fa fa-google"></i> Google Ads Account Setup</h4>
+        //         <div class="progress" style="margin-top: 10px;">
+        //             <div id="google-ads-progress-bar" class="progress-bar progress-bar-striped active" 
+        //                  role="progressbar" style="width: 0%">
+        //                 <span id="google-ads-progress-text">Initializing...</span>
+        //             </div>
+        //         </div>
+        //         <small id="google-ads-status-text" style="color: #666;">
+        //             Setting up your Google Ads account automatically...
+        //         </small>
+        //     </div>
+        // `;
+        
+        // Insert after the form
+        const form = document.getElementById('form-product');
+        if (form) {
+            form.parentNode.insertBefore(googleAdsProgressContainer, form.nextSibling);
+        } else {
+            document.body.appendChild(googleAdsProgressContainer);
+        }
+    }
+}
+
+
+
+// Start Google Ads auto-create process
+async function startGoogleAdsAutoCreate(vendorId, companyName) {
+    console.log('Starting ipshopy Ads auto-create for vendor:', vendorId, 'company:', companyName);
+    
+    initGoogleAdsProgressContainer();
+    if (googleAdsProgressContainer) googleAdsProgressContainer.style.display = 'block';
+    
+    try {
+        const response = await fetch('index.php?route=vendor/vendor/googleAdsAutoCreate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ vendor_id: vendorId, company_name: companyName })
+        });
+        
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const result = await response.json();
+        // console.log('ipshopy Ads auto-create response:', result);
+        
+        if (result.success && result.session_id) {
+            googleAdsSessionId = result.session_id;
+            updateGoogleAdsProgress(10, 'ipshopy Ads setup initiated...');
+            startGoogleAdsStatusPolling();
+        } else {
+            showGoogleAdsError('Failed to start ipshopy Ads setup: ' + (result.error || 'Unknown error'));
+        }
+        
+    } catch (error) {
+        console.error('ipshopy Ads auto-create error:', error);
+        showGoogleAdsError('Failed to connect to ipshopy Ads service: ' + error.message);
+    }
+}
+
+// Start status polling
+function startGoogleAdsStatusPolling() {
+    if (!googleAdsSessionId) return;
+    
+    // console.log('Starting status polling for session:', googleAdsSessionId);
+    
+    googleAdsStatusInterval = setInterval(async () => {
+        try {
+            const response = await fetch(`index.php?route=vendor/vendor/googleAdsStatus&session_id=${googleAdsSessionId}`);
+            if (!response.ok) return console.error('Status check HTTP error:', response.status, response.statusText);
+            
+            const status = await response.json();
+            // console.log('ipshopy Ads status:', status);
+            
+            if (status.success && status.data) {
+                const data = status.data;
+                if (data.status === 'processing') {
+                    const progress = Math.min(data.current_step * 25, 75);
+                    const stepName = data.steps && data.steps[data.current_step - 1] ? data.steps[data.current_step - 1].name : 'Processing...';
+                    updateGoogleAdsProgress(progress, stepName);
+                } else if (data.status === 'completed') {
+                    updateGoogleAdsProgress(100, 'ipshopy Ads account created successfully!');
+                    showGoogleAdsSuccess(data.customer_id);
+                    stopGoogleAdsStatusPolling();
+                } else if (data.status === 'failed') {
+                    showGoogleAdsError('ipshopy Ads setup failed: ' + (data.error || 'Unknown error'));
+                    stopGoogleAdsStatusPolling();
+                }
+            } else {
+                console.error('Status check failed:', status.error || 'Unknown error');
+            }
+            
+        } catch (error) {
+            console.error('Status polling error:', error);
+        }
+    }, 2000);
+    
+    // Stop polling after 2 minutes
+    setTimeout(() => {
+        if (googleAdsStatusInterval) {
+            stopGoogleAdsStatusPolling();
+            showGoogleAdsError('ipshopy Ads setup timed out. Please try again later.');
+        }
+    }, 120000);
+}
+
+
+
+
+// Start------------------
+
+function pollGoogleAdsStatus(sessionId) {
+    console.log('Starting status polling for session: ' + sessionId);
+    let attempts = 0;
+    const maxAttempts = 24; // 2 minutes (5s interval * 24)
+    
+    const poll = setInterval(() => {
+        if (attempts >= maxAttempts) {
+            clearInterval(poll);
+            showError('ipshopy Ads setup timed out');
+            return;
+        }
+        
+        fetch('index.php?route=vendor/vendor/googleAdsStatus&session_id=' + encodeURIComponent(sessionId))
+            .then(response => {
+                console.log('Raw status response:', response);
+                if (!response.ok) {
+                    throw new Error('HTTP error ' + response.status);
+                }
+                return response.json();
+            })
+            .then(result => {
+                console.log('Status response:', result);
+                if (result.success && result.data && result.data.status === 'completed') {
+                    clearInterval(poll);
+                    showSuccess('ipshopy Ads account connected successfully!');
+                } else if (result.success && result.data && result.data.status === 'failed') {
+                    clearInterval(poll);
+                    showError('ipshopy Ads setup failed: ' + (result.data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Status polling error:', error);
+                clearInterval(poll);
+                showError('ipshopy Ads status check failed: ' + error.message);
+            });
+        attempts++;
+    }, 5000);
+}
+
+// Stop status polling
+function stopGoogleAdsStatusPolling() {
+    if (googleAdsStatusInterval) {
+        clearInterval(googleAdsStatusInterval);
+        googleAdsStatusInterval = null;
+    }
+}
+
+// Update progress
+function updateGoogleAdsProgress(percentage, text) {
+    const progressBar = document.getElementById('google-ads-progress-bar');
+    const progressText = document.getElementById('google-ads-progress-text');
+    const statusText = document.getElementById('google-ads-status-text');
+    
+    if (progressBar) progressBar.style.width = percentage + '%';
+    if (progressText) progressText.textContent = text;
+    if (statusText) statusText.textContent = text;
+}
+
+// Show success
+function showGoogleAdsSuccess(customerId) {
+    if (googleAdsProgressContainer) {
+        // googleAdsProgressContainer.innerHTML = `
+        //     <div class="alert alert-success">
+        //         <h4><i class="fa fa-check-circle"></i> Google Ads Account Created Successfully!</h4>
+        //         <p><strong>Customer ID:</strong> ${customerId}</p>
+        //         <p>Your Google Ads account has been created and connected to your vendor account.</p>
+        //         <button type="button" class="btn btn-primary" onclick="window.location.href='${successUrl}'">
+        //             Continue to Dashboard
+        //         </button>
+        //     </div>
+        // `;
+        // Optional: Auto redirect after 2 seconds
+        setTimeout(() => { window.location.href = successUrl; }, 2000);
+    }
+}
+
+
+
+// Show error
+function showGoogleAdsError(message) {
+    if (googleAdsProgressContainer) {
+        googleAdsProgressContainer.innerHTML = `
+            <div class="alert alert-danger">
+                <h4><i class="fa fa-exclamation-triangle"></i> ipshopy Ads Setup Failed</h4>
+                <p>${message}</p>
+                <button type="button" class="btn btn-primary btn-sm" onclick="retryGoogleAdsSetup()">
+                    <i class="fa fa-refresh"></i> Retry
+                </button>
+                <button type="button" class="btn btn-default btn-sm" onclick="skipGoogleAdsSetup()">
+                    Skip and Continue
+                </button>
+            </div>
+        `;
+    }
+    stopGoogleAdsStatusPolling();
+}
+
+// Retry Google Ads setup
+function retryGoogleAdsSetup() {
+    const vendorId = googleAdsSessionId ? googleAdsSessionId.split('_')[2] : null;
+    const companyName = document.querySelector('input[name="company"]')?.value || 'Unknown Company';
+    
+    if (vendorId) {
+        startGoogleAdsAutoCreate(vendorId, companyName);
+    } else {
+        showGoogleAdsError('Unable to retry: Vendor ID not found');
+    }
+}
+
+// Skip Google Ads setup
+function skipGoogleAdsSetup() {
+    window.location.href = successUrl;
+}
+</script>
+
+<script>
+(function () {
+  // ---------- Shortcuts ----------
+  const $ = (s, c = document) => c.querySelector(s);
+
+  // ---------- Endpoints ----------
+  const ROUTES = {
+    email: 'index.php?route=vendor/vendor/checkEmailExist',
+    phone: 'index.php?route=vendor/vendor/checkPhoneExist',
+    gstin: 'index.php?route=vendor/vendor/checkGstinExist', // expects GET fax=
+    pan:   'index.php?route=vendor/vendor/checkPanExist'    // expects POST value=
+  };
+
+  // ---------- Field ids ----------
+  const firstEl = $('#input-firstname');
+  const lastEl  = document.querySelector('#input-lastname') || document.querySelector('#input-last_name');
+  const emailEl = $('#input-email');
+  const phoneEl = $('#input-telephone');
+  const gstEl   = $('#input-fax');   // GSTIN
+  // PAN: robust selector (id/name fallbacks)
+  const panEl   = document.querySelector('#input-pan, #input-pan_no, #input-pan-number, [name="pan"], [name="pan_no"], [name="pan_number"]') || $('#input-pan');
+
+  // ---------- Find/Create warning div ----------
+  function getWarnEl(input, fallbackId) {
+    if (fallbackId) {
+      const byId = document.getElementById(fallbackId);
+      if (byId) return byId;
+    }
+    if (input && input.id) {
+      const guessIds = [
+        input.id.replace('input-', 'warning-'),
+        input.id.replace('_', '-').replace('input-', 'warning-'),
+        'warning-lastname', 'warning-last_name'
+      ];
+      for (const gid of guessIds) {
+        const el = document.getElementById(gid);
+        if (el) return el;
+      }
+    }
+    const grp = input.closest && input.closest('.form-group');
+    if (grp) {
+      const already = grp.querySelector('.text-warning');
+      if (already) return already;
+    }
+    const div = document.createElement('div');
+    div.className = 'text-warning';
+    div.style.display = 'none';
+    (input.parentNode || document.body).insertBefore(div, input.nextSibling);
+    return div;
+  }
+
+  // ---------- UI helpers ----------
+  function showWarn(input, msg) {
+    if (!input) return;
+    const wEl = getWarnEl(input);
+    if (wEl) { wEl.textContent = msg; wEl.style.display = 'block'; }
+    input.classList.add('has-error');
+    input.setAttribute('aria-invalid', 'true');
+  }
+  function hideWarn(input) {
+    if (!input) return;
+    const wEl = getWarnEl(input);
+    if (wEl) wEl.style.display = 'none';
+    input.classList.remove('has-error');
+    input.removeAttribute('aria-invalid');
+  }
+
+  // ---------- Regex ----------
+  const RE = {
+    email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    phone: /^[0-9]{10}$/,
+    pan:   /^[A-Z]{5}[0-9]{4}[A-Z]$/,
+    gst:   /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/,
+    name:  /^[A-Za-z ]{2,32}$/
+  };
+
+  // ---------- Normalizers ----------
+  const normEmail = el => (el.value = (el.value || '').trim().toLowerCase());
+  const normPhone = el => (el.value = (el.value || '').replace(/\D/g, '').slice(0,10));
+  const normPAN   = el => (el.value = (el.value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0,10));
+  const normGST   = el => (el.value = (el.value || '').trim().toUpperCase());
+  const normName  = el => {
+    let v = (el.value || '').replace(/\s{2,}/g, ' ').trim();
+    el.value = v;
+    return v;
+  };
+
+  // ---------- Server duplicate check helpers ----------
+  // POST with body paramName=val   (email/phone/pan)
+  async function uniqPOST(url, val, paramName = 'value') {
+    try {
+      const tsUrl = url + (url.includes('?') ? '&' : '?') + '_=' + Date.now();
+      const res = await fetch(tsUrl, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8' },
+        body: encodeURIComponent(paramName) + '=' + encodeURIComponent(val),
+        credentials: 'same-origin',
+        cache: 'no-store'
+      });
+      const data = await res.json();
+      return !!(data && data.exists === true);
+    } catch (e) {
+      console.warn('uniqPOST failed', e);
+      return false;
+    }
+  }
+
+  // GET ?fax=...  (GSTIN backend expects GET fax=)
+  async function uniqGSTGET(url, gstinVal) {
+    try {
+      const tsUrl = url + (url.includes('?') ? '&' : '?') +
+                    'fax=' + encodeURIComponent(gstinVal) + '&_=' + Date.now();
+      const res = await fetch(tsUrl, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        credentials: 'same-origin',
+        cache: 'no-store'
+      });
+      const data = await res.json();
+      return !!(data && data.exists === true);
+    } catch (e) {
+      console.warn('uniqGSTGET failed', e);
+      return false;
+    }
+  }
+
+  // ---------- Validators ----------
+  async function vEmail(el){
+    const v = normEmail(el);
+    if(!v) return 'Email is required';
+    if(!RE.email.test(v)) return 'Invalid email';
+    if(await uniqPOST(ROUTES.email, v)) return 'Already exists';
+    return '';
+  }
+  async function vPhone(el){
+    const v = normPhone(el);
+    if(!v) return 'Contact number is required';
+    if(!RE.phone.test(v)) return 'Enter 10-digit number';
+    if(await uniqPOST(ROUTES.phone, v)) return 'Already exists';
+    return '';
+  }
+  async function vGST(el){
+    const v = normGST(el);
+    if(!v) return ''; // optional
+    if(!RE.gst.test(v)) return 'Invalid GSTIN';
+    if(await uniqGSTGET(ROUTES.gstin, v)) return 'Already exists';
+    return '';
+  }
+  async function vPAN(el){
+    const v = normPAN(el);
+    if(!v) return ''; // optional
+    if(!RE.pan.test(v)) return 'Invalid PAN';
+    // IMPORTANT: your PHP expects POST body "value=PAN"
+    if(await uniqPOST(ROUTES.pan, v)) return 'Already exists';
+    return '';
+  }
+  function vFirst(el){
+    const v = normName(el);
+    if(!v) return 'First name is required';
+    if(v.length < 2 || v.length > 32) return 'Must be 2–32 characters';
+    if(!RE.name.test(v)) return 'Only letters and spaces';
+    return '';
+  }
+  function vLast(el){
+    const v = normName(el);
+    if(!v) return 'Last name is required';
+    if(v.length < 2 || v.length > 32) return 'Must be 2–32 characters';
+    if(!RE.name.test(v)) return 'Only letters and spaces';
+    return '';
+  }
+
+  // ---------- Live hide ----------
+  [firstEl, lastEl, emailEl, phoneEl, gstEl, panEl]
+    .forEach(el => el && el.addEventListener('input', () => hideWarn(el)));
+
+  // Name filters (letters + single spaces)
+  function filterNameInput(e){
+    const before = e.target.value;
+    let after = before.replace(/[^A-Za-z ]+/g, '').replace(/\s{2,}/g, ' ');
+    e.target.value = after;
+  }
+  firstEl && firstEl.addEventListener('input', filterNameInput);
+  lastEl  && lastEl.addEventListener('input',  filterNameInput);
+
+  // PAN live filter (uppercase + A–Z/0–9 + max length 10)
+  panEl && panEl.addEventListener('input', () => {
+    const before = panEl.value || '';
+    const after = before.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0,10);
+    if (before !== after) panEl.value = after;
+    hideWarn(panEl);
+  });
+
+  // Blur feedback
+  firstEl && firstEl.addEventListener('blur', () => {
+    const m = vFirst(firstEl); if (m) showWarn(firstEl, m); else hideWarn(firstEl);
+  });
+  lastEl && lastEl.addEventListener('blur', () => {
+    const m = vLast(lastEl); if (m) showWarn(lastEl, m); else hideWarn(lastEl);
+  });
+  gstEl && gstEl.addEventListener('blur', async () => {
+    const m = await vGST(gstEl); if (m) showWarn(gstEl, m); else hideWarn(gstEl);
+  });
+  panEl && panEl.addEventListener('blur', async () => {
+    const m = await vPAN(panEl); if (m) showWarn(panEl, m); else hideWarn(panEl);
+  });
+
+  // ---------- Step checkers ----------
+  async function checkUserStep(){
+    let ok = true, m;
+    if(firstEl){ m = vFirst(firstEl); if(m){ showWarn(firstEl, m); ok = false; } }
+    if(lastEl) { m = vLast(lastEl);   if(m){ showWarn(lastEl,  m); ok = false; } }
+    if(emailEl){ m = await vEmail(emailEl); if(m){ showWarn(emailEl, m); ok = false; } }
+    if(phoneEl){ m = await vPhone(phoneEl); if(m){ showWarn(phoneEl, m); ok = false; } }
+    return ok;
+  }
+  async function checkCompanyGate(){
+    let ok = true, m;
+    if(gstEl){ m = await vGST(gstEl); if(m){ showWarn(gstEl, m); ok = false; } }
+    if(panEl){ m = await vPAN(panEl); if(m){ showWarn(panEl, m); ok = false; } }
+    return ok;
+  }
+
+  // ---------- Replace+bind ----------
+  function replaceAndBind(id, handler){
+    const btn = document.getElementById(id);
+    if(!btn) return;
+    const clone = btn.cloneNode(true);
+    btn.parentNode.replaceChild(clone, btn);
+    clone.addEventListener('click', handler, { capture:true });
+  }
+
+  replaceAndBind('button-next-1', async (e)=>{
+    e.preventDefault(); e.stopImmediatePropagation();
+    if(await checkUserStep()) document.querySelector('[href="#tab-address"]')?.click();
+  });
+  replaceAndBind('button-next-4', async (e)=>{
+    e.preventDefault(); e.stopImmediatePropagation();
+    if(await checkCompanyGate()) document.querySelector('[href="#tab-business"]')?.click();
+  });
+
+  // ---------- Tab guard ----------
+  function guardTab(href, checker){
+    document.addEventListener('click', async (ev)=>{
+      const a = ev.target.closest(`a[href="${href}"]`);
+      if(!a) return;
+      if(a.dataset.free === '1'){ a.dataset.free=''; return; }
+      ev.preventDefault(); ev.stopImmediatePropagation();
+      if(await checker()){ a.dataset.free='1'; a.click(); }
+    }, true);
+
+    if(window.jQuery){
+      jQuery(document).on('show.bs.tab', `a[href="${href}"]`, function(ev){
+        if(this.dataset.free === '1'){ this.dataset.free=''; return true; }
+        ev.preventDefault(); ev.stopImmediatePropagation();
+        (async()=>{ if(await checker()){ this.dataset.free='1'; jQuery(this).tab('show'); } })();
+        return false;
+      });
+    }
+  }
+  guardTab('#tab-address',  checkUserStep);
+  guardTab('#tab-business', checkCompanyGate);
+
+  // ---------- Final submit fallback ----------
+  const form = $('#form-product');
+  form && form.addEventListener('submit', async (e)=>{
+    const ok1 = await checkUserStep();
+    const ok2 = await checkCompanyGate();
+    if(!(ok1 && ok2)){
+      e.preventDefault(); e.stopPropagation();
+      alert('');
+    }
+  });
+
+})();
+</script>
+
+
+
+
+
+
+
+
+
+{# Ends  ------------------------- #}
+
+{# nikita google ads auto create end #}

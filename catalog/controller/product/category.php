@@ -418,7 +418,7 @@ $filter_data = array(
 
   $data['pricefilter'] = $this->load->controller('product/filtercombo');
 
-
+var_dump($category_id);
 			$this->response->setOutput($this->load->view('product/category', $data));
 		} else {
 		      $data['pricefilter'] = $this->load->controller('product/filtercombo');
