@@ -13,10 +13,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Create deployment directory
+      - name: Setup deployment directory
         run: |
-          mkdir -p ~/dev-ipshopy
-
+          # Create directory if it doesn't exist (requires one-time sudo setup: sudo chmod 775 /var/www/html && sudo chown www-data:$USER /var/www/html)
+          mkdir -p /var/www/html/dev-ipshopy
+          
       - name: Deploy files
         run: |
           rsync -av --delete \
@@ -25,16 +26,16 @@ jobs:
             --exclude 'storage_dev_ipshopy/logs/*' \
             --exclude 'storage_dev_ipshopy/cache/*' \
             --exclude 'storage_dev_ipshopy/session/*' \
-            ./ ~/dev-ipshopy/
+            ./ /var/www/html/dev-ipshopy/
 
       - name: Install Composer dependencies
         run: |
-          cd ~/dev-ipshopy
+          cd /var/www/html/dev-ipshopy
           composer install --no-dev --optimize-autoloader
 
       - name: Generate config.php
         run: |
-          cat > ~/dev-ipshopy/config.php << 'EOF'
+          cat > /var/www/html/dev-ipshopy/config.php << 'EOF'
           <?php
           // HTTP
           define('HTTP_SERVER', 'http://localhost/dev-ipshopy/');
@@ -43,10 +44,10 @@ jobs:
           define('HTTPS_SERVER', 'http://localhost/dev-ipshopy/');
 
           // DIR
-          define('DIR_APPLICATION', '/home/${{ github.actor }}/dev-ipshopy/catalog/');
-          define('DIR_SYSTEM', '/home/${{ github.actor }}/dev-ipshopy/system/');
-          define('DIR_IMAGE', '/home/${{ github.actor }}/dev-ipshopy/image/');
-          define('DIR_STORAGE', '/home/${{ github.actor }}/dev-ipshopy/storage_dev_ipshopy/');
+          define('DIR_APPLICATION', '/var/www/html/dev-ipshopy/catalog/');
+          define('DIR_SYSTEM', '/var/www/html/dev-ipshopy/system/');
+          define('DIR_IMAGE', '/var/www/html/dev-ipshopy/image/');
+          define('DIR_STORAGE', '/var/www/html/dev-ipshopy/storage_dev_ipshopy/');
           define('DIR_LANGUAGE', DIR_APPLICATION . 'language/');
           define('DIR_TEMPLATE', DIR_APPLICATION . 'view/theme/');
           define('DIR_CONFIG', DIR_SYSTEM . 'config/');
@@ -69,7 +70,7 @@ jobs:
 
       - name: Generate admin/config.php
         run: |
-          cat > ~/dev-ipshopy/admin/config.php << 'EOF'
+          cat > /var/www/html/dev-ipshopy/admin/config.php << 'EOF'
           <?php
           // HTTP
           define('HTTP_SERVER', 'http://localhost/dev-ipshopy/admin/');
@@ -80,11 +81,11 @@ jobs:
           define('HTTPS_CATALOG', 'http://localhost/dev-ipshopy/');
 
           // DIR
-          define('DIR_APPLICATION', '/home/${{ github.actor }}/dev-ipshopy/admin/');
-          define('DIR_SYSTEM', '/home/${{ github.actor }}/dev-ipshopy/system/');
-          define('DIR_IMAGE', '/home/${{ github.actor }}/dev-ipshopy/image/');
-          define('DIR_STORAGE', '/home/${{ github.actor }}/dev-ipshopy/storage_dev_ipshopy/');
-          define('DIR_CATALOG', '/home/${{ github.actor }}/dev-ipshopy/catalog/');
+          define('DIR_APPLICATION', '/var/www/html/dev-ipshopy/admin/');
+          define('DIR_SYSTEM', '/var/www/html/dev-ipshopy/system/');
+          define('DIR_IMAGE', '/var/www/html/dev-ipshopy/image/');
+          define('DIR_STORAGE', '/var/www/html/dev-ipshopy/storage_dev_ipshopy/');
+          define('DIR_CATALOG', '/var/www/html/dev-ipshopy/catalog/');
           define('DIR_LANGUAGE', DIR_APPLICATION . 'language/');
           define('DIR_TEMPLATE', DIR_APPLICATION . 'view/template/');
           define('DIR_CONFIG', DIR_SYSTEM . 'config/');
@@ -110,11 +111,11 @@ jobs:
 
       - name: Set permissions
         run: |
-          chmod -R 755 ~/dev-ipshopy
-          chmod -R 777 ~/dev-ipshopy/storage_dev_ipshopy
-          chmod -R 777 ~/dev-ipshopy/image
+          chmod -R 755 /var/www/html/dev-ipshopy
+          chmod -R 777 /var/www/html/dev-ipshopy/storage_dev_ipshopy
+          chmod -R 777 /var/www/html/dev-ipshopy/image
 
       - name: Deployment complete
         run: |
           echo "✅ Dev deployment complete!"
-          echo "🌐 Deployed to: ~/dev-ipshopy/"
+          echo "🌐 Access at: http://localhost/dev-ipshopy/"
