@@ -103,6 +103,13 @@ jobs:
           chmod -R 775 /var/www/html/dev.ipshopy/storage_dev_ipshopy/modification
           chmod -R 775 /var/www/html/dev.ipshopy/storage_dev_ipshopy/session
           chmod -R 775 /var/www/html/dev.ipshopy/storage_dev_ipshopy/upload
+          sudo chown -R www-data:www-data /var/www/html/dev.ipshopy
+          sudo chmod -R 755 /var/www/html/dev.ipshopy
+          sudo chmod -R 775 /var/www/html/dev.ipshopy/storage_dev_ipshopy
+          sudo mkdir -p /var/www/html/dev.ipshopy/storage_dev_ipshopy/logs
+          sudo touch /var/www/html/dev.ipshopy/storage_dev_ipshopy/logs/error.log
+          sudo chown -R www-data:www-data /var/www/html/dev.ipshopy/storage_dev_ipshopy
+          
 
       - name: Restart Apache
         run: |
