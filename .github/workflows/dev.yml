@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+#
       - name: Setup deployment directory
         run: |
           mkdir -p /var/www/html/dev.ipshopy
