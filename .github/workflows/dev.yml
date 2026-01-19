@@ -12,20 +12,16 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-#
-      - name: Setup deployment directory
+
+      - name: Clean and setup deployment directory
         run: |
+          rm -rf /var/www/html/dev.ipshopy/*
           mkdir -p /var/www/html/dev.ipshopy
           
       - name: Deploy files
         run: |
-          rsync -av --delete --no-perms --no-owner --no-group \
-            --exclude '.git' \
-            --exclude '.github' \
-            --exclude 'storage_dev_ipshopy/logs/*' \
-            --exclude 'storage_dev_ipshopy/cache/*' \
-            --exclude 'storage_dev_ipshopy/session/*' \
-            ./ /var/www/html/dev.ipshopy/
+          cp -rf ./* /var/www/html/dev.ipshopy/
+          cp -rf ./.htaccess /var/www/html/dev.ipshopy/ 2>/dev/null || true
 
       - name: Install Composer dependencies
         run: |
