@@ -8,7 +8,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: [self-hosted, dev]
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -17,7 +17,7 @@ jobs:
         run: |
           rm -rf /var/www/html/dev.ipshopy/* 2>/dev/null || true
           mkdir -p /var/www/html/dev.ipshopy
-          
+
       - name: Deploy files
         run: |
           cp -rf ./* /var/www/html/dev.ipshopy/
@@ -30,14 +30,11 @@ jobs:
 
       - name: Generate config.php
         run: |
-          echo '<?php
-          // HTTP
+          cat << 'EOF' > /var/www/html/dev.ipshopy/config.php
+          <?php
           define("HTTP_SERVER", "http://localhost/dev.ipshopy/");
-
-          // HTTPS
           define("HTTPS_SERVER", "http://localhost/dev.ipshopy/");
 
-          // DIR
           define("DIR_APPLICATION", "/var/www/html/dev.ipshopy/catalog/");
           define("DIR_SYSTEM", "/var/www/html/dev.ipshopy/system/");
           define("DIR_IMAGE", "/var/www/html/dev.ipshopy/image/");
@@ -51,27 +48,25 @@ jobs:
           define("DIR_MODIFICATION", DIR_STORAGE . "modification/");
           define("DIR_SESSION", DIR_STORAGE . "session/");
           define("DIR_UPLOAD", DIR_STORAGE . "upload/");
-          // DB
+
           define("DB_DRIVER", "mysqli");
-          define("DB_HOSTNAME", "localhost");
+          define("DB_HOSTNAME", "127.0.0.1");
           define("DB_USERNAME", "root");
           define("DB_PASSWORD", "root123");
           define("DB_DATABASE", "dev_ipshopy");
           define("DB_PORT", "3306");
-          define("DB_PREFIX", "oc_");' > /var/www/html/dev.ipshopy/config.php
+          define("DB_PREFIX", "oc_");
+          EOF
 
       - name: Generate admin/config.php
         run: |
-          echo '<?php
-          // HTTP
+          cat << 'EOF' > /var/www/html/dev.ipshopy/admin/config.php
+          <?php
           define("HTTP_SERVER", "http://localhost/dev.ipshopy/admin/");
           define("HTTP_CATALOG", "http://localhost/dev.ipshopy/");
-
-          // HTTPS
           define("HTTPS_SERVER", "http://localhost/dev.ipshopy/admin/");
           define("HTTPS_CATALOG", "http://localhost/dev.ipshopy/");
 
-          // DIR
           define("DIR_APPLICATION", "/var/www/html/dev.ipshopy/admin/");
           define("DIR_SYSTEM", "/var/www/html/dev.ipshopy/system/");
           define("DIR_IMAGE", "/var/www/html/dev.ipshopy/image/");
@@ -87,17 +82,31 @@ jobs:
           define("DIR_SESSION", DIR_STORAGE . "session/");
           define("DIR_UPLOAD", DIR_STORAGE . "upload/");
 
-          // DB
           define("DB_DRIVER", "mysqli");
-          define("DB_HOSTNAME", "localhost");
+          define("DB_HOSTNAME", "127.0.0.1");
           define("DB_USERNAME", "root");
           define("DB_PASSWORD", "root123");
           define("DB_DATABASE", "dev_ipshopy");
           define("DB_PORT", "3306");
           define("DB_PREFIX", "oc_");
 
-          // OpenCart API
-          define("OPENCART_SERVER", "https://www.opencart.com/");' > /var/www/html/dev.ipshopy/admin/config.php
+          define("OPENCART_SERVER", "https://www.opencart.com/");
+          EOF
+
+      - name: Fix permissions for Apache
+        run: |
+          chown -R www-data:www-data /var/www/html/dev.ipshopy
+          chmod -R 755 /var/www/html/dev.ipshopy
+          chmod -R 775 /var/www/html/dev.ipshopy/storage_dev_ipshopy
+          chmod -R 775 /var/www/html/dev.ipshopy/storage_dev_ipshopy/logs
+          chmod -R 775 /var/www/html/dev.ipshopy/storage_dev_ipshopy/cache
+          chmod -R 775 /var/www/html/dev.ipshopy/storage_dev_ipshopy/modification
+          chmod -R 775 /var/www/html/dev.ipshopy/storage_dev_ipshopy/session
+          chmod -R 775 /var/www/html/dev.ipshopy/storage_dev_ipshopy/upload
+
+      - name: Restart Apache
+        run: |
+          systemctl restart apache2
 
       - name: Deployment complete
         run: |
