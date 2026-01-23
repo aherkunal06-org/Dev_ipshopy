@@ -1,6 +1,6 @@
 # Enable Apache rewrite engine
 RewriteEngine On
-
+#
 # Since OpenCart is in the root of dev.ipshopy.com, use:
 RewriteBase /dev.ipshopy/
 
